@@ -13,14 +13,14 @@ struct HomeScreenView: View {
     var body: some View {
         NavigationView {
             VStack {
-                VStack {
                     homeScreenHeader
                     goalListScrollView
+
                     Spacer()
-                }
-                .ignoresSafeArea(.all)
-                .background(Color.whitePrimary)
+               
             }
+            .ignoresSafeArea(.all)
+            .background(Color.whitePrimary)
             .tabItem {
                 Image(systemName: "house.fill")
             }
@@ -109,7 +109,10 @@ struct HomeScreenView: View {
                 GoalsList(goals: $goals) { selectedGoal in
                     self.selectedGoal = selectedGoal
                 }
+                .frame(maxWidth: .infinity)
+                .edgesIgnoringSafeArea(.all)
             }
+
         }
         .padding()
     }

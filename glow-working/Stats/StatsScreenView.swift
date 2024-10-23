@@ -24,89 +24,97 @@ struct StatsScreenView: View {
 //    @State private var goals: [Goal] = []
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 30) {
+        ZStack {
+            Color.whitePrimary.edgesIgnoringSafeArea(.all)
 
-            Text("Statistics")
-                .font(.custom("Quicksand-Regular", size: 36))
-                .fontWeight(.semibold)
-                .padding(.top, 40)
-                .frame(maxWidth: .infinity, alignment: .center)
-            
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Weekly Progress")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            VStack(alignment: .leading, spacing: 30) {
                 
-                HStack(spacing: 30) {
-                    ForEach(progressValues.indices, id: \.self) { index in
-                        let progress = progressValues[index]
-                        VStack {
-                            Image(starImage(for: index))
-                                .resizable()
-                                .frame(width: 40, height: 40)
-                                .padding(.bottom, 5)
-                            Text("\(Int(progress * 100))%")
-                                .font(.caption).opacity(0.4)
-                                .padding(.horizontal, 5)
-                                .background(Capsule().fill(Color.gray.opacity(0.2)))
+                Text("Statistics")
+                    .font(.title3).bold()
+                    .animation(.none)
+                    .frame(maxWidth: .infinity)
+                    .foregroundStyle(.black1)
+                
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Weekly Progress")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.black1)
+                    
+                    HStack(spacing: 30) {
+                        ForEach(progressValues.indices, id: \.self) { index in
+                            let progress = progressValues[index]
+                            VStack {
+                                Image(starImage(for: index))
+                                    .resizable()
+                                    .frame(width: 40, height: 40)
+                                    .padding(.bottom, 5)
+                                Text("\(Int(progress * 100))%")
+                                    .font(.caption).opacity(0.4)
+                                    .padding(.horizontal, 5)
+                                    .background(Capsule().fill(Color.gray.opacity(0.2)))
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.blue1)
+                            .frame(height: 20)
+                        
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.middleBrown)
+                            .frame(width: 250, height: 20)
+                        
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(.yellow1)
+                            .frame(width: 100, height: 20)
+                    }
+                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
+
+// MARK: Best & Worst Section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Best & Worst")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.black1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text("Your top habits are...")
+                        .font(.subheadline)
+                    
+                    HStack(spacing: 8) {
+                        ForEach(topGoals, id: \.0) { goal in
+                            HabitCardView(number: topGoals.firstIndex(where: { $0.0 == goal.0 })! + 1, name: goal.0, icon: goal.1, percentage: goal.2)
+                        }
+                        
+                    }
+                    
+                    
+                    Text("Your bottom habits are...")
+                        .font(.subheadline)
+                    
+                    HStack(spacing: 8) {
+                        ForEach(bottomGoals, id: \.0) { goal in
+                            HabitCardView(number: bottomGoals.firstIndex(where: { $0.0 == goal.0 })! + 1, name: goal.0, icon: goal.1, percentage: goal.2)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity)
-                
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.blue1)
-                        .frame(height: 20)
-                    
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.middleBrown)
-                        .frame(width: 250, height: 20)
-                    
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(.yellow1)
-                        .frame(width: 100, height: 20)
-                }
+                .padding()
+                .background(Color.white)
+                .cornerRadius(10)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
+
+                Spacer()
             }
             .padding()
-            .background(Color.white)
-            .cornerRadius(10)
-            .shadow(radius: 1)
-            
-            // Best & Worst Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Best & Worst")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text("Your top habits are...")
-                    .font(.subheadline)
-                
-                HStack(spacing: 8) {
-                    ForEach(topGoals, id: \.0) { goal in
-                        HabitCardView(number: topGoals.firstIndex(where: { $0.0 == goal.0 })! + 1, name: goal.0, icon: goal.1, percentage: goal.2)
-                    }
-                }
-                
-                Text("Your bottom habits are...")
-                    .font(.subheadline)
-                
-                HStack(spacing: 8) {
-                    ForEach(bottomGoals, id: \.0) { goal in
-                        HabitCardView(number: bottomGoals.firstIndex(where: { $0.0 == goal.0 })! + 1, name: goal.0, icon: goal.1, percentage: goal.2)
-                    }
-                }
-            }
-            .padding()
-            .background(Color.white)
-            .cornerRadius(10)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .shadow(radius: 1)
-            
-            Spacer()
         }
-        .padding()
-        .background(Color.gray.opacity(0.05).ignoresSafeArea())
     }
     
         private func starImage(for index: Int) -> String {
@@ -170,14 +178,19 @@ struct HabitCardView: View {
             }
             .padding(.top, 10)
             .frame(width: 92, height: 107)
-            .background(.grayHabitStats)
-            .cornerRadius(12)
-            .shadow(radius: 2)
-            
+            .background(.gray2)
+            .cornerRadius(13)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.gray3, lineWidth: 1)
+            )
+
             Text("\(number)")
                 .font(.caption)
                 .padding(5)
         }
+        .frame(maxWidth: .infinity)
+
     }
 }
 
