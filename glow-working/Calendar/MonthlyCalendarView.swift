@@ -70,6 +70,9 @@ struct MonthlyCalendarView: View {
             let startingSpaces = CalendarHelper().weekDay(firstDayofMonth)
             let prevMonth = CalendarHelper().minusMonth(dateHolder.date)
             let daysInPrevMonth = CalendarHelper().daysInMonth(prevMonth)
+
+            // Get today's date for comparison
+            let today = Calendar.current.startOfDay(for: Date())
             
             ForEach(0..<6) { row in
                 HStack(spacing: 1) {
@@ -82,8 +85,12 @@ struct MonthlyCalendarView: View {
                         let day = isWithinCurrentMonth ? currentDay : nil
                         let date = dateForDay(currentDay: day, in: dateHolder.date)
 
-                        let logForDay = dailyLogs.first { Calendar.current.isDate($0.date.dateValue(), inSameDayAs: date) }
-                        
+                        // Filter out logs for today's date
+                        let logForDay = dailyLogs.first {
+                            Calendar.current.isDate($0.date.dateValue(), inSameDayAs: date) &&
+                            !Calendar.current.isDate($0.date.dateValue(), inSameDayAs: today) // Exclude today's log
+                        }
+
                         CalendarCell(
                             count: count,
                             startingSpaces: startingSpaces,

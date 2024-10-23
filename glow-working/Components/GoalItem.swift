@@ -3,7 +3,14 @@ import FirebaseCore
 
 struct GoalItem: View {
     @Binding var goal: Goal
-    
+    var onGoalSelected: (Goal) -> Void // Closure for goal selection
+
+    // Explicit initializer
+    init(goal: Binding<Goal>, onGoalSelected: @escaping (Goal) -> Void) {
+        self._goal = goal // Use the binding variable
+        self.onGoalSelected = onGoalSelected // Assign the closure
+    }
+
     var body: some View {
         HStack {
             GradientIcon(iconName: goal.icon)
@@ -24,7 +31,9 @@ struct GoalItem: View {
                 .font(.subheadline)
                 .foregroundStyle(.gray1)
             
-            Button(action: {}) {
+            Button(action: {
+                onGoalSelected(goal) // Call the closure on button tap
+            }) {
                 Image(systemName: "ellipsis")
             }
             .foregroundColor(.black1)
@@ -33,8 +42,9 @@ struct GoalItem: View {
     }
 }
 
+
 #Preview {
     let sampleGoal = Goal(id: "\(UUID())", date: Timestamp(date: Date()), deleted: false, detail: "Exercise for 1 hour", icon: "figure.run", name: "Exercise", quantityComplete: 0.5, quantityGoal: 1, unit: "hours")
     
-    GoalItem(goal: .constant(sampleGoal))
+    GoalItem(goal: .constant(sampleGoal), onGoalSelected: { _ in })
 }
