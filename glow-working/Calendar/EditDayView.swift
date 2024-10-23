@@ -25,6 +25,7 @@ struct EditExistingDayView: View {
             VStack {
                 headerView
                 if let dailyLog = dailyLog {
+                    progressSection
                     contentScrollView
                     saveButton
                         .padding()
@@ -38,12 +39,19 @@ struct EditExistingDayView: View {
             }
         }
         .sheet(item: $selectedGoal) { goal in
-            EditGoalProgressView(goal: .constant(goal)) {
+            EditGoalProgressView(goal: Binding(
+                get: { goal },
+                set: { updatedGoal in
+                    if let index = goals.firstIndex(where: { $0.id == updatedGoal.id }) {
+                        goals[index] = updatedGoal
+                        updateGoal(updatedGoal)
+                    }
+                }
+            )) {
                 fetchDailyLog(for: date)
             }
             .presentationDetents([.fraction(0.5), .large])
         }
-
         .fullScreenCover(isPresented: $isPickerPresented) {
             PhotoPicker(selectedImage: $selectedImage)
         }
@@ -74,6 +82,21 @@ struct EditExistingDayView: View {
             .padding()
         }
     }
+    
+    private var progressSection: some View {
+        HStack {
+            let totalGoals = goals.reduce(0) { $0 + $1.quantityGoal }
+            let totalComplete = goals.reduce(0) { $0 + $1.quantityComplete }
+            let totalProgress = totalGoals > 0 ? totalComplete / totalGoals : 0
+            
+            ProgressBar(progress: totalProgress)
+            Text("\(Int(totalProgress * 100))%")
+                .font(.body)
+                .foregroundStyle(.gray1)
+                .frame(width: 50)
+        }
+        .padding(.horizontal)
+    }
 
     // MARK: - Content ScrollView
     private var contentScrollView: some View {
@@ -92,17 +115,6 @@ struct EditExistingDayView: View {
         }
     }
 
-
-    private var goalsListView: some View {
-        ForEach($goals) { goal in
-            GoalItem(goal: goal)
-                .padding()
-                .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
-                .padding(.bottom, 16)
-                .shadow(color: .blackShadow, radius: 10, y: 5)
-        }
-    }
-
     // MARK: - Note Text Editor
     private var noteTextEditor: some View {
         NoteTextEditor(note: $note, originalNote: $originalNote)
@@ -112,7 +124,6 @@ struct EditExistingDayView: View {
     private var imagePicker: some View {
         ImagePicker(selectedImage: $selectedImage, isPickerPresented: $isPickerPresented)
     }
-
 
     // MARK: - Save Button
     private var saveButton: some View {
@@ -147,6 +158,7 @@ struct EditExistingDayView: View {
             }
         }
 
+        // Update each goal to ensure persistence of changes
         for goal in goalRepository.goals {
             updateGoal(goal)
         }
@@ -156,7 +168,6 @@ struct EditExistingDayView: View {
 
         presentationMode.wrappedValue.dismiss()
     }
-
 
     private func fetchDailyLog(for date: Date) {
         dailyLogRepository.fetchDailyLogs(for: date) { logs in

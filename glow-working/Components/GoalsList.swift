@@ -7,17 +7,15 @@ struct GoalsList: View {
     
     var body: some View {
         ForEach($goals) { goal in
-            GoalItem(goal: goal)
+            GoalItem(goal: goal, onGoalSelected: onGoalSelected)
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
                 .padding(.bottom, 16)
                 .shadow(color: .blackShadow, radius: 10, y: 5)
-                .onTapGesture {
-                    onGoalSelected(goal.wrappedValue)
-                }
         }
     }
 }
+
 
 #Preview {
     let sampleGoals = [

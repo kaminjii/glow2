@@ -3,6 +3,7 @@ import FirebaseCore
 
 struct GoalItem: View {
     @Binding var goal: Goal
+    var onGoalSelected: (Goal) -> Void
     
     var body: some View {
         HStack {
@@ -24,7 +25,9 @@ struct GoalItem: View {
                 .font(.subheadline)
                 .foregroundStyle(.gray1)
             
-            Button(action: {}) {
+            Button(action: {
+                onGoalSelected(goal) 
+            }) {
                 Image(systemName: "ellipsis")
             }
             .foregroundColor(.black1)
@@ -33,8 +36,9 @@ struct GoalItem: View {
     }
 }
 
+
 #Preview {
     let sampleGoal = Goal(id: "\(UUID())", date: Timestamp(date: Date()), deleted: false, detail: "Exercise for 1 hour", icon: "figure.run", name: "Exercise", quantityComplete: 0.5, quantityGoal: 1, unit: "hours")
     
-    GoalItem(goal: .constant(sampleGoal))
+    GoalItem(goal: .constant(sampleGoal), onGoalSelected: { _ in })
 }
