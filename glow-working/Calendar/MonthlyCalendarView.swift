@@ -10,15 +10,8 @@ struct MonthlyCalendarView: View {
     var body: some View {
         ZStack {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
-                .onTapGesture {
-                   selectedDate = nil
-               }
-            
+
             VStack(spacing: 1) {
-                Image(systemName: "line.3.horizontal")
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .padding(.bottom, 20)
-                
                 DateScrollView()
                     .environmentObject(dateHolder)
                 
@@ -28,9 +21,9 @@ struct MonthlyCalendarView: View {
                     .padding(.bottom)
                 
                 if let selectedDate = selectedDate {
-                    SelectedDayCard(
+                    DayCard(
                         date: selectedDate.date.dateValue(),
-                        progress: selectedDate.totalPercentCompleted,
+                        progress: selectedDate.totalProgress,
                         note: selectedDate.note!,
                         dailyLog: selectedDate,
                         showEditDay: $showEditDay
@@ -47,6 +40,9 @@ struct MonthlyCalendarView: View {
                 Spacer()
             }
             .padding()
+            .onTapGesture {
+               selectedDate = nil
+           }
         }
     }
     

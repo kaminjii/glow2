@@ -1,7 +1,7 @@
 import SwiftUI
 import FirebaseCore
 
-struct SelectedDayCard: View {
+struct DayCard: View {
     var date: Date
     var progress: Double
     var note: String
@@ -94,12 +94,12 @@ struct SelectedDayCard: View {
         id: UUID().uuidString,
         date: Timestamp(date: Date()),
         note: "Completed most of the tasks today!",
-        totalPercentCompleted: 0.75
+        totalProgress: 0.75
     )
     
-    SelectedDayCard(
+    DayCard(
         date: sampleDailyLog.date.dateValue(),
-        progress: sampleDailyLog.totalPercentCompleted,
+        progress: sampleDailyLog.totalProgress,
         note: sampleDailyLog.note!,
         dailyLog: sampleDailyLog,
         showEditDay: .constant(false)

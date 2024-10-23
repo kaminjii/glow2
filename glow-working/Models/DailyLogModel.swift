@@ -5,5 +5,5 @@ struct DailyLog: Identifiable, Codable {
     var date: Timestamp
     var image: String?
     var note: String?
-    var totalPercentCompleted: Double = 0.0
+    var totalProgress: Double = 0.0
 }

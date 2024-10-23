@@ -14,7 +14,7 @@ class TodaysProgressViewModel: ObservableObject {
         repository.fetchDailyLogs(for: today) { logs in
             if let fetchedLog = logs.first {
                 self.note = fetchedLog.note ?? ""
-                self.progress = CGFloat(fetchedLog.totalPercentCompleted)
+                self.progress = CGFloat(fetchedLog.totalProgress)
             } else {
                 self.note = ""
                 self.progress = 0.0
@@ -33,7 +33,7 @@ class TodaysProgressViewModel: ObservableObject {
                 var updatedLogData = existingLog // Create a copy of the existing log
                 updatedLogData.image = self.selectedImage != nil ? self.convertImageToData(self.selectedImage!) : "" // Convert UIImage to data if needed
                 updatedLogData.note = self.note
-                updatedLogData.totalPercentCompleted = Double(self.progress)
+                updatedLogData.totalProgress = Double(self.progress)
                 
                 // Update the existing log
                 self.repository.updateDailyLog(updatedLogData) { success in
@@ -45,7 +45,7 @@ class TodaysProgressViewModel: ObservableObject {
                 }
             } else {
                 // If log does not exist, create a new one
-                let logData = DailyLog(date: Timestamp(date: today), image: "", note: self.note, totalPercentCompleted: Double(self.progress))
+                let logData = DailyLog(date: Timestamp(date: today), image: "", note: self.note, totalProgress: Double(self.progress))
                 self.repository.addDailyLog(logData) { success in
                     if success {
                         print("Log added successfully!")

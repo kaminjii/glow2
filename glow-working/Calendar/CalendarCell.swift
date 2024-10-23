@@ -16,7 +16,7 @@ struct CalendarCell: View {
         VStack {
             if month.monthType == .Current {
                 if let dailyLog = dailyLog {
-                    let progress = dailyLog.totalPercentCompleted
+                    let progress = dailyLog.totalProgress
                     
                     if progress == 0 {
                         Circle()
