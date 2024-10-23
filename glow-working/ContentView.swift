@@ -1,21 +1,31 @@
-//
-//  ContentView.swift
-//  glow-working
-//
-//  Created by Kaitlin Wood on 10/22/24.
-//
-
 import SwiftUI
 
 struct ContentView: View {
+    @State private var selectedTab: Int = 0
+
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        let dateHolder = DateHolder()
+        
+
+        
+        TabView (selection: $selectedTab){
+            CalendarView(selectedTab: $selectedTab)
+                .environmentObject(dateHolder)
+                .tabItem {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(.secondary)
+                }
+                .tag(1)
+
+            HomeScreenView(selectedTab: $selectedTab)
+                .tabItem {
+                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                        .foregroundStyle(.secondary)
+                }
+                .tag(0)
         }
-        .padding()
+        .tint(.selectedTab)
+        .ignoresSafeArea()
     }
 }
 
