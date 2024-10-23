@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct StatsScreenView: View {
+    @Binding var selectedTab: Int
 
     let topGoals = [
         ("Exercise", "exercise_icon", 80),
@@ -195,6 +196,6 @@ struct HabitCardView: View {
 }
 
 #Preview {
-    StatsScreenView()
+    StatsScreenView(selectedTab: .constant((2)))
 }
 
