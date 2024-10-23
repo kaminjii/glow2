@@ -1,7 +1,7 @@
 import SwiftUI
 import FirebaseCore
 
-struct SelectedDayInfoCell: View {
+struct SelectedDayCard: View {
     var date: Date
     var progress: Double
     var note: String
@@ -97,7 +97,7 @@ struct SelectedDayInfoCell: View {
         totalPercentCompleted: 0.75
     )
     
-    SelectedDayInfoCell(
+    SelectedDayCard(
         date: sampleDailyLog.date.dateValue(),
         progress: sampleDailyLog.totalPercentCompleted,
         note: sampleDailyLog.note!,

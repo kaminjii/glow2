@@ -39,16 +39,9 @@ struct EditExistingDayView: View {
             }
         }
         .sheet(item: $selectedGoal) { goal in
-            EditGoalProgressView(goal: Binding(
-                get: { goal },
-                set: { updatedGoal in
-                    if let index = goals.firstIndex(where: { $0.id == updatedGoal.id }) {
-                        goals[index] = updatedGoal // Update the local goals array
-                        updateGoal(updatedGoal) // Persist the changes
-                    }
-                }
-            )) {
+            EditGoalProgressView(goal: .constant(goal)) {
                 fetchDailyLog(for: date)
+                goalRepository.fetchGoals(for: date)
             }
             .presentationDetents([.fraction(0.5), .large])
         }

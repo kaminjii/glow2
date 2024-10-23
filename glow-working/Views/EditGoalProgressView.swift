@@ -23,7 +23,7 @@ struct EditGoalProgressView: View {
     }
     
     private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 20, style: .continuous)
+        RoundedRectangle(cornerRadius: 0, style: .continuous)
             .fill(Color.sheet1)
     }
     

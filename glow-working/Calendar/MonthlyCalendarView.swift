@@ -28,7 +28,7 @@ struct MonthlyCalendarView: View {
                     .padding(.bottom)
                 
                 if let selectedDate = selectedDate {
-                    SelectedDayInfoCell(
+                    SelectedDayCard(
                         date: selectedDate.date.dateValue(),
                         progress: selectedDate.totalPercentCompleted,
                         note: selectedDate.note!,
