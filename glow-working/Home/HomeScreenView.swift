@@ -42,7 +42,7 @@ struct HomeScreenView: View {
     
     private var homeScreenHeader: some View {
         ZStack {
-            LinearGradient(gradient: Gradient(colors: [.middleBrown, .whitePrimary]), startPoint: .top, endPoint: .bottom)
+            LinearGradient(gradient: Gradient(colors: [backgroundColor, .whitePrimary]), startPoint: .top, endPoint: .bottom)
                 .frame(maxHeight: 450)
                 .ignoresSafeArea(.all)
             
@@ -159,6 +159,23 @@ struct HomeScreenView: View {
             return "star1"
         default:
             return "star3"
+        }
+    }
+    
+    private var backgroundColor: Color {
+        switch totalProgress {
+        case 0..<0.2:
+            return .bottomBlue
+        case 0.2..<0.4:
+            return .middleBlue
+        case 0.4..<0.6:
+            return .middleBrown
+        case 0.6..<0.8:
+            return .middleYellow
+        case 0.8...1.0:
+            return .topYellow
+        default:
+            return .middleBrown
         }
     }
 }
