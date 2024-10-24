@@ -14,6 +14,7 @@ struct EditExistingDayView: View {
     @State private var goals: [Goal] = []
     @State private var selectedImage: UIImage? = nil
     @State private var isPickerPresented = false
+    @State private var progress: Double = 0
     
     let date: Date
     
@@ -24,7 +25,7 @@ struct EditExistingDayView: View {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
             VStack {
                 headerView
-                if let dailyLog = dailyLog {
+                if dailyLog != nil {
                     progressSection
                     contentScrollView
                     saveButton
@@ -78,12 +79,8 @@ struct EditExistingDayView: View {
     
     private var progressSection: some View {
         HStack {
-            let totalGoals = goals.reduce(0) { $0 + $1.quantityGoal }
-            let totalComplete = goals.reduce(0) { $0 + $1.quantityComplete }
-            let totalProgress = totalGoals > 0 ? totalComplete / totalGoals : 0
-            
-            ProgressBar(progress: totalProgress)
-            Text("\(Int(totalProgress * 100))%")
+            ProgressBar(progress: progress)
+            Text("\(Int(progress * 100))%")
                 .font(.body)
                 .foregroundStyle(.gray1)
                 .frame(width: 50)
@@ -95,15 +92,16 @@ struct EditExistingDayView: View {
     private var contentScrollView: some View {
         ScrollView {
             VStack {
-                GoalsList(goals: $goals) { selectedGoal in
+                GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
                     self.selectedGoal = selectedGoal
-                }
+                }, showValue: true)
                 noteTextEditor
+                    .padding()
                 imagePicker
-                    .padding(.vertical)
+                    .padding()
                 Spacer()
             }
-            .padding()
+            .padding(.vertical)
             .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
         }
     }
@@ -168,6 +166,8 @@ struct EditExistingDayView: View {
                 self.dailyLog = log
                 self.note = log.note!
                 self.originalNote = log.note!
+                self.progress = log.totalProgress
+                
             } else {
                 print("No daily log found for the date.")
             }

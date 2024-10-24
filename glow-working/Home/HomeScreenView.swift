@@ -3,6 +3,10 @@ import FirebaseFirestore
 
 struct HomeScreenView: View {
     @Binding var selectedTab: Int
+    @State private var lastLogDate: Date? = UserDefaults.standard.object(forKey: "lastLogDate") as? Date
+
+    @State private var editableGoals: [Goal] = []
+    
     @State var note: String = ""
     @State private var selectedGoal: Goal? = nil
     @State private var showTodaysProgress = false
@@ -12,30 +16,34 @@ struct HomeScreenView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
+            ZStack {
+                Color.whitePrimary.edgesIgnoringSafeArea(.all)
+                
+                VStack {
                     homeScreenHeader
                     goalListScrollView
-
+                        .edgesIgnoringSafeArea(.all)
+                    
                     Spacer()
-               
-            }
-            .ignoresSafeArea(.all)
-            .background(Color.whitePrimary)
-            .tabItem {
-                Image(systemName: "house.fill")
-            }
-            .fullScreenCover(isPresented: $showTodaysProgress) {
-                TodaysProgressView(note: $note)
-            }
-            .sheet(item: $selectedGoal) { goal in
-                EditGoalProgressView(goal: .constant(goal)) {
+                    
+                }
+                .ignoresSafeArea(.all)
+                .tabItem {
+                    Image(systemName: "house.fill")
+                }
+                .fullScreenCover(isPresented: $showTodaysProgress) {
+                    TodaysProgressView(note: $note)
+                }
+                .sheet(item: $selectedGoal) { goal in
+                    EditGoalProgressView(goal: .constant(goal)) {
+                        fetchGoalsForToday()
+                    }
+                    .presentationDetents([.fraction(0.5), .large])
+                }
+                
+                .onAppear {
                     fetchGoalsForToday()
                 }
-                .presentationDetents([.fraction(0.5), .large])
-            }
-            
-            .onAppear {
-                fetchGoalsForToday()
             }
         }
     }
@@ -52,6 +60,7 @@ struct HomeScreenView: View {
                     .font(.largeTitle).bold()
                     .padding(.horizontal, 30)
                     .padding(.top, 100)
+                    .padding(.bottom, 16)
                     .foregroundStyle(.white)
                 
                 Image(starImage)
@@ -105,16 +114,12 @@ struct HomeScreenView: View {
     
     private var goalListScrollView: some View {
         return ScrollView {
-            VStack {
-                GoalsList(goals: $goals) { selectedGoal in
-                    self.selectedGoal = selectedGoal
-                }
-                .frame(maxWidth: .infinity)
-                .edgesIgnoringSafeArea(.all)
-            }
+            GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
+                self.selectedGoal = selectedGoal
+            }, showValue: true)
+            .padding(.top)
 
         }
-        .padding()
     }
     
     private func fetchGoalsForToday() {
@@ -122,10 +127,12 @@ struct HomeScreenView: View {
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        
+
+        // Fetch goals for today
         Firestore.firestore().collection("goals")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
+            .whereField("deleted", isEqualTo: false)
             .getDocuments { querySnapshot, error in
                 if let error = error {
                     print("Error fetching goals: \(error)")
@@ -133,17 +140,47 @@ struct HomeScreenView: View {
                     self.goals = querySnapshot?.documents.compactMap { document -> Goal? in
                         try? document.data(as: Goal.self)
                     } ?? []
-                    calculateTotalProgress()
+                    
+                    self.fetchDailyLogForToday()
                 }
             }
     }
-    
-    private func calculateTotalProgress() {
-        let totalGoals = goals.reduce(0) { $0 + $1.quantityGoal }
-        let totalComplete = goals.reduce(0) { $0 + $1.quantityComplete }
-        
-        totalProgress = totalGoals > 0 ? totalComplete / totalGoals : 0
+
+    private func fetchDailyLogForToday() {
+        let calendar = Calendar.current
+        let today = Date()
+        let startOfDay = calendar.startOfDay(for: today)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        Firestore.firestore().collection("dailyLogs")
+            .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
+            .whereField("date", isLessThan: Timestamp(date: endOfDay))
+            .getDocuments { querySnapshot, error in
+                if let error = error {
+                    print("Error fetching daily log: \(error)")
+                } else {
+                    if let dailyLogDoc = querySnapshot?.documents.first {
+                        let totalProgressValue = dailyLogDoc.data()["totalProgress"] as? Double ?? 0.0
+                        
+                        // Log the fetched total progress value
+                        print("Fetched total progress value: \(totalProgressValue)")
+                        
+                        // Update the UI on the main thread
+                        DispatchQueue.main.async {
+                            self.totalProgress = CGFloat(totalProgressValue)
+                            print("Updated total progress: \(self.totalProgress)") // Log the updated value
+                        }
+                    } else {
+                        DispatchQueue.main.async {
+                            self.totalProgress = 0.0
+                            print("No daily log found, set total progress to 0.")
+                        }
+                    }
+                }
+            }
     }
+
+
     
     private var starImage: String {
         switch totalProgress {
