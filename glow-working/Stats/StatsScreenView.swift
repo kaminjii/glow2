@@ -116,6 +116,7 @@ struct StatsScreenView: View {
             }
             .padding()
         }
+        .tag(2)
     }
     
         private func starImage(for index: Int) -> String {

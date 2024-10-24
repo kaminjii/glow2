@@ -217,6 +217,6 @@ struct ProfileScreenView: View {
 }
 
 #Preview {
-    ProfileScreenView(selectedTab: .constant((3)))
+    ProfileScreenView(selectedTab: .constant(4))
 }
 

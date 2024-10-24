@@ -10,35 +10,44 @@ import SwiftUI
 struct LoginUserView: View {
     @State var email: String = ""
     @State var password: String = ""
+    @State private var login: Bool = false
     
     var body: some View {
-        VStack {
-            Spacer()
-            
-            Text("Welcome Back!")
-                .font(.title)
-                .padding()
-                        
+        NavigationStack {
             VStack {
+                Spacer()
                 
-                AppTextField(icon: "envelope.fill", placeholder: "Email", label: $email)
-                    .padding(.top)
+                Text("Welcome Back!")
+                    .font(.title)
+                    .padding()
                 
-                AppTextField(icon: "lock.fill", placeholder: "Password", label: $password)
-                    .padding(.top)
+                VStack {
+                    
+                    AppTextField(icon: "envelope.fill", placeholder: "Email", label: $email)
+                        .padding(.top)
+                    
+                    AppTextField(icon: "lock.fill", placeholder: "Password", label: $password)
+                        .padding(.top)
+                    
+                    Spacer()
+                }
+                .frame(height: 250)
+                
+                GradientButton(title: "Login", action: {
+                    login = true
+                }, isEnabled: true)
+                
                 
                 Spacer()
             }
-            .frame(height: 250)
-            
-            GradientButton(title: "Login", action: {}, isEnabled: true)
-
-
-            Spacer()
+            .padding(.horizontal)
+            .ignoresSafeArea(edges: .all)
+            .background(.whitePrimary)
+            .toolbarVisibility(.hidden)
+            .navigationDestination(isPresented: $login) {
+                ContentView()
+            }
         }
-        .padding(.horizontal)
-        .ignoresSafeArea(edges: .all)
-        .background(.whitePrimary)
     }
 }
 

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SelectTemplateGoalsView: View {
+    @State private var done: Bool = false
+    
     @State var templateGoals: [TemplateGoal] = [
         TemplateGoal(iconName: "figure.run", title: "Exercise", description: "Exercise for 1 hour", checked: false),
         TemplateGoal(iconName: "book.fill", title: "Read", description: "Read for 30 minutes", checked: false),
@@ -9,37 +11,45 @@ struct SelectTemplateGoalsView: View {
     ]
     
     var body: some View {
-        ZStack {
-            VStack {
-                Text("What would you like to \ntrack?")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 100)
-                    .font(.title)
-
-                ForEach(templateGoals.indices, id: \.self) { index in
-                    TemplateGoalItem(goal: $templateGoals[index])
-                        .padding(.vertical, 5)
-                        .shadow(color: .blackShadow, radius: 20, y: 10)
+        NavigationStack {
+            ZStack {
+                VStack {
+                    Text("What would you like to \ntrack?")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 100)
+                        .font(.title)
+                    
+                    ForEach(templateGoals.indices, id: \.self) { index in
+                        TemplateGoalItem(goal: $templateGoals[index])
+                            .padding(.vertical, 5)
+                            .shadow(color: .blackShadow, radius: 20, y: 10)
+                    }
+                    
+                    //                AddOtherGoal()
+                    //                    .padding(.vertical, 5)
+                    //                    .shadow(color: .blackShadow, radius: 20, y: 10)
+                    
+                    Spacer()
                 }
                 
-                AddOtherGoal()
-                    .padding(.vertical, 5)
-                    .shadow(color: .blackShadow, radius: 20, y: 10)
-
-                Spacer()
+                VStack {
+                    Spacer()
+                    
+                    GradientButton(title: "Done", action: {
+                        done = true
+                    }, isEnabled: true)
+                        .padding(.bottom, 40)
+                }
             }
-            
-            VStack {
-                Spacer()
-                
-                GradientButton(title: "Done", action: {}, isEnabled: true)
-                    .padding(.bottom, 40)
+            .padding(.horizontal)
+            .ignoresSafeArea(edges: .all)
+            .background(.whitePrimary)
+            .navigationDestination(isPresented: $done) {
+                SetPasswordView()
             }
+            .toolbarVisibility(.hidden)
         }
-        .padding(.horizontal)
-        .ignoresSafeArea(edges: .all)
-        .background(.whitePrimary)
     }
 }
 

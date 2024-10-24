@@ -13,7 +13,7 @@ struct SplashScreenView: View {
     
     var body: some View {
         if isActive {
-            ContentView()
+            GetStartedView()
         } else {
             ZStack {
                 Color.whitePrimary.edgesIgnoringSafeArea(.all)

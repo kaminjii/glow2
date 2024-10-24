@@ -27,6 +27,7 @@ struct CalendarView: View {
                     .transition(.opacity)
             }
         }
+        .tag(1)
         .animation(.easeInOut, value: isDailyView)
     }
 }

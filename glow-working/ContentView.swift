@@ -27,14 +27,20 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
                 .tag(0)
-            ProfileScreenView(selectedTab: $selectedTab)
+            GoalsView(selectedTab: $selectedTab)
                 .tabItem {
-                    Image(systemName: selectedTab == 3 ? "person.fill" : "person")
+                    Image(systemName: selectedTab == 3 ? "document.fill" : "document")
                 }
                 .tag(3)
+            ProfileScreenView(selectedTab: $selectedTab)
+                .tabItem {
+                    Image(systemName: selectedTab == 4 ? "person.fill" : "person")
+                }
+                .tag(4)
         }
         .tint(.selectedTab)
         .ignoresSafeArea()
+        .toolbarVisibility(.hidden)
     }
 }
 

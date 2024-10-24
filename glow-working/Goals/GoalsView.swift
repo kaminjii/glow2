@@ -3,6 +3,8 @@ import FirebaseCore
 import FirebaseFirestore
 
 struct GoalsView: View {
+    @Binding var selectedTab: Int
+
     @StateObject private var goalRepository = GoalRepository()
     @State private var selectedGoal: Goal? = nil
     @State private var showActionSheet = false
@@ -12,6 +14,7 @@ struct GoalsView: View {
     @State private var goals: [Goal] = []
 
     var body: some View {
+        
         ZStack{
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
             
@@ -124,5 +127,5 @@ struct GoalsView: View {
 
 
 #Preview {
-    GoalsView()
+    GoalsView(selectedTab: .constant(3))
 }

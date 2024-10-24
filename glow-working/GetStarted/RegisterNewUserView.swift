@@ -4,38 +4,48 @@ struct RegisterNewUserView: View {
     @State var firstName: String = ""
     @State var lastName: String = ""
     @State var email: String = ""
+    @State private var continueClicked: Bool = false
     
     var body: some View {
-        VStack {
-            Spacer()
-            
-            Text("Sign Up")
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .font(.title)
-
+        NavigationStack {
             VStack {
+                Spacer()
                 
-                AppTextField(icon: "person.fill", placeholder: "Email", label: $firstName)
-                    .padding(.top)
+                Text("Sign Up")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .font(.title)
                 
-                AppTextField(icon: "person.fill", placeholder: "Password", label: $lastName)
-                    .padding(.top)
+                VStack {
+                    
+                    AppTextField(icon: "person.fill", placeholder: "First Name", label: $firstName)
+                        .padding(.top)
+                    
+                    AppTextField(icon: "person.fill", placeholder: "Last Name", label: $lastName)
+                        .padding(.top)
+                    
+                    AppTextField(icon: "envelope.fill", placeholder: "Email", label: $email)
+                        .padding(.top)
+                    
+                    Spacer()
+                }
+                .frame(height: 250)
                 
-                AppTextField(icon: "envelope.fill", placeholder: "Password", label: $email)
-                    .padding(.top)
+                GradientButton(title: "Continue", action: {
+                    continueClicked = true
+                }, isEnabled: true)
                 
                 Spacer()
             }
-            .frame(height: 250)
+            .padding(.horizontal)
+            .ignoresSafeArea(edges: .all)
+            .background(.whitePrimary)
+            .navigationDestination(isPresented: $continueClicked) {
+                SetPasswordView()
+            }
+            .toolbarVisibility(.hidden)
             
-            GradientButton(title: "Continue", action: {}, isEnabled: true)
-
-            Spacer()
         }
-        .padding(.horizontal)
-        .ignoresSafeArea(edges: .all)
-        .background(.whitePrimary)
     }
 }
 

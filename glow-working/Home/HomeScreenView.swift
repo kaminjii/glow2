@@ -46,6 +46,7 @@ struct HomeScreenView: View {
                 }
             }
         }
+
     }
     
     private var homeScreenHeader: some View {
