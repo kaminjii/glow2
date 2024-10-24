@@ -16,19 +16,23 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
                 .tag(1)
-
-            HomeScreenView(selectedTab: $selectedTab)
-                .tabItem {
-                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
-                        .foregroundStyle(.secondary)
-                }
-                .tag(0)
             StatsScreenView(selectedTab: $selectedTab)
                 .tabItem {
                     Image(systemName: selectedTab == 2 ? "chart.bar.fill" : "chart.bar")
                         .foregroundStyle(.secondary)
                 }
                 .tag(2)
+            HomeScreenView(selectedTab: $selectedTab)
+                .tabItem {
+                    Image(systemName: selectedTab == 0 ? "house.fill" : "house")
+                        .foregroundStyle(.secondary)
+                }
+                .tag(0)
+            ProfileScreenView(selectedTab: $selectedTab)
+                .tabItem {
+                    Image(systemName: selectedTab == 3 ? "person.fill" : "person")
+                }
+                .tag(3)
         }
         .tint(.selectedTab)
         .ignoresSafeArea()
