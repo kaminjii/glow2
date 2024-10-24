@@ -31,7 +31,6 @@ struct MonthlyCalendarView: View {
                     .transition(.slide)
                     .fullScreenCover(isPresented: $showEditDay) {
                         EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
-                            print(updatedLog)
                             self.selectedDate = updatedLog
                         })
                     }

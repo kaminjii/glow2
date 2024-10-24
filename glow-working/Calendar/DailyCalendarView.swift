@@ -59,9 +59,7 @@ struct DailyListView: View {
                 .listStyle(PlainListStyle())
             }
             .fullScreenCover(item: $logToEdit) { log in
-                EditExistingDayView(date: log.date.dateValue(), onSave: { updatedLog in
-                    print(updatedLog)
-                })
+                EditExistingDayView(date: log.date.dateValue(), onSave: { _ in })
             }
         }
     }

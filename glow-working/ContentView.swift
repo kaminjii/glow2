@@ -3,10 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab: Int = 0
 
+
     var body: some View {
         let dateHolder = DateHolder()
-        
-
         
         TabView (selection: $selectedTab){
             CalendarView(selectedTab: $selectedTab)
@@ -23,6 +22,7 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
                 .tag(0)
+
             StatsScreenView(selectedTab: $selectedTab)
                 .tabItem {
                     Image(systemName: selectedTab == 2 ? "chart.bar.fill" : "chart.bar")
