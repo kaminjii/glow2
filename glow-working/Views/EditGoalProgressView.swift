@@ -2,12 +2,14 @@ import SwiftUI
 import FirebaseCore
 
 struct EditGoalProgressView: View {
+    @Binding var goal: Goal
     @ObservedObject var viewModel: EditGoalProgressViewModel
     
     @Environment(\.dismiss) var dismiss
     var onSave: () -> Void
     
     init(goal: Binding<Goal>, onSave: @escaping () -> Void) {
+        self._goal = goal
         self.viewModel = EditGoalProgressViewModel(goal: goal.wrappedValue)
         self.onSave = onSave
     }
@@ -99,14 +101,33 @@ struct EditGoalProgressView: View {
         .frame(width: 70, height: 20, alignment: .trailing)
     }
     
+//    private var saveButton: some View {
+//        GradientButton(title: "Save", action: {
+//            viewModel.saveGoal {
+//                onSave() 
+//                dismiss()
+//            }
+//        }, isEnabled: true)
+//    }
     private var saveButton: some View {
         GradientButton(title: "Save", action: {
             viewModel.saveGoal {
-                onSave() 
-                dismiss()
+
+                let dailyLogRepository = DailyLogRepository()
+                
+                let goalDate = viewModel.goal.date.dateValue()
+                dailyLogRepository.updateTotalProgress(for: goalDate) {
+                    DispatchQueue.main.async {
+                        self.goal = viewModel.goal
+                        dismiss()
+                        onSave()
+                    }
+                }
+                
             }
         }, isEnabled: true)
     }
+
     
     private var dragGesture: some Gesture {
         DragGesture().onEnded { value in

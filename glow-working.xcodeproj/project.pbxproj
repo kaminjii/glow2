@@ -11,6 +11,7 @@
 		336933202CC819B800F2A229 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3369331F2CC819B800F2A229 /* FirebaseFirestore */; };
 		336933222CC819B800F2A229 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 336933212CC819B800F2A229 /* FirebaseStorage */; };
 		336933342CC81EBD00F2A229 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 336933332CC81EBD00F2A229 /* FirebaseCore */; };
+		33FBC3832CCA4AF500D5F450 /* SymbolPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 33FBC3822CCA4AF500D5F450 /* SymbolPicker */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 				336933202CC819B800F2A229 /* FirebaseFirestore in Frameworks */,
 				336933342CC81EBD00F2A229 /* FirebaseCore in Frameworks */,
 				336933222CC819B800F2A229 /* FirebaseStorage in Frameworks */,
+				33FBC3832CCA4AF500D5F450 /* SymbolPicker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,6 +90,7 @@
 				3369331F2CC819B800F2A229 /* FirebaseFirestore */,
 				336933212CC819B800F2A229 /* FirebaseStorage */,
 				336933332CC81EBD00F2A229 /* FirebaseCore */,
+				33FBC3822CCA4AF500D5F450 /* SymbolPicker */,
 			);
 			productName = "glow-working";
 			productReference = 336933092CC8196E00F2A229 /* glow-working.app */;
@@ -119,6 +122,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				3369331C2CC819B800F2A229 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				33FBC3812CCA4AF500D5F450 /* XCRemoteSwiftPackageReference "SymbolPicker" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3369330A2CC8196E00F2A229 /* Products */;
@@ -358,6 +362,14 @@
 				minimumVersion = 11.4.0;
 			};
 		};
+		33FBC3812CCA4AF500D5F450 /* XCRemoteSwiftPackageReference "SymbolPicker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/xnth97/SymbolPicker";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -380,6 +392,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3369331C2CC819B800F2A229 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
+		};
+		33FBC3822CCA4AF500D5F450 /* SymbolPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 33FBC3812CCA4AF500D5F450 /* XCRemoteSwiftPackageReference "SymbolPicker" */;
+			productName = SymbolPicker;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
