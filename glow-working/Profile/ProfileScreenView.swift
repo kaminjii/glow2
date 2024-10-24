@@ -50,6 +50,17 @@ struct ProfileScreenView: View {
                 
                 VStack(alignment: .trailing) {
                     
+                    Button(action: {
+                        navigationPath.append("editProfile")
+                    }) {
+                        HStack {
+                            Image(systemName: "square.and.pencil")
+                                .foregroundStyle(Color.gray1)
+   
+                        }
+                        .padding(.horizontal)
+                    }
+                    
                     VStack(spacing: 20){
                         // Top image for profile
                         Image(.star3)
@@ -183,6 +194,16 @@ struct ProfileScreenView: View {
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+//                    .toolbar {
+//                        ToolbarItem(placement: .navigationBarTrailing) {
+//                            Button(action: {
+//                                navigationPath.append("editProfile")
+//                            }) {
+//                                Image(systemName: "square.and.pencil")
+//                                    .foregroundStyle(Color.gray1)
+//                            }
+//                        }
+//                    }
                 }
                 
             }
@@ -191,16 +212,7 @@ struct ProfileScreenView: View {
                     EditProfileView(navigationPath: $navigationPath)
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        navigationPath.append("editProfile")
-                    }) {
-                        Image(systemName: "square.and.pencil")
-                            .foregroundStyle(Color.gray1)
-                    }
-                }
-            }
+
         }
     }
     
