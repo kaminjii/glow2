@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SelectTemplateGoalsView: View {
     @State private var done: Bool = false
+    @State private var showAddGoal: Bool = false
     
     @State var templateGoals: [TemplateGoal] = [
         TemplateGoal(iconName: "figure.run", title: "Exercise", description: "Exercise for 1 hour", checked: false),
@@ -26,9 +27,12 @@ struct SelectTemplateGoalsView: View {
                             .shadow(color: .blackShadow, radius: 20, y: 10)
                     }
                     
-                    //                AddOtherGoal()
-                    //                    .padding(.vertical, 5)
-                    //                    .shadow(color: .blackShadow, radius: 20, y: 10)
+                    AddOtherGoal()
+                        .padding(.vertical, 5)
+                        .shadow(color: .blackShadow, radius: 20, y: 10)
+                        .onTapGesture {
+                            showAddGoal = true
+                        }
                     
                     Spacer()
                 }
@@ -49,6 +53,9 @@ struct SelectTemplateGoalsView: View {
                 SetPasswordView()
             }
             .toolbarVisibility(.hidden)
+            .sheet(isPresented: $showAddGoal) {
+                AddGoalModal()
+            }
         }
     }
 }
