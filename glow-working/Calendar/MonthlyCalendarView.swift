@@ -38,7 +38,7 @@ struct MonthlyCalendarView: View {
                 
                 Spacer()
             }
-            .padding()
+            .padding(.horizontal)
             .onTapGesture {
                selectedDate = nil
            }

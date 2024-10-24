@@ -8,7 +8,6 @@ struct DailyListView: View {
     @State private var logToEdit: DailyLog?
 
     var filteredLogs: [DailyLog] {
-        // Filter logs to only include those in the current month and year
         let calendar = Calendar.current
         return dailyLogs.filter { log in
             let logDate = log.date.dateValue()
@@ -24,7 +23,7 @@ struct DailyListView: View {
                 
                 DateScrollView()
                     .environmentObject(dateHolder)
-                    .padding()
+                    .padding(.horizontal)
 
                 List {
                     if filteredLogs.isEmpty {

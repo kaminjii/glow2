@@ -1,10 +1,12 @@
 import SwiftUI
 
 struct RegisterNewUserView: View {
-    @State var firstName: String = ""
-    @State var lastName: String = ""
+    @State var fullName: String = ""
     @State var email: String = ""
-    @State private var continueClicked: Bool = false
+    @State var password: String = ""
+    @State var confirmPassword: String = ""
+    @State private var signUpClicked: Bool = false
+    @State private var navigateToLogin: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -13,35 +15,53 @@ struct RegisterNewUserView: View {
                 
                 Text("Sign Up")
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal)
                     .font(.title)
                 
                 VStack {
-                    
-                    AppTextField(icon: "person.fill", placeholder: "First Name", label: $firstName)
-                        .padding(.top)
-                    
-                    AppTextField(icon: "person.fill", placeholder: "Last Name", label: $lastName)
+                    AppTextField(icon: "person.fill", placeholder: "Full Name", label: $fullName)
                         .padding(.top)
                     
                     AppTextField(icon: "envelope.fill", placeholder: "Email", label: $email)
                         .padding(.top)
                     
-                    Spacer()
+                    AppTextField(icon: "lock.fill", placeholder: "Password", label: $password)
+                        .padding(.top)
+                    
+                    AppTextField(icon: "lock.fill", placeholder: "Confirm Password", label: $confirmPassword)
+                        .padding(.top)
+                    
                 }
-                .frame(height: 250)
                 
-                GradientButton(title: "Continue", action: {
-                    continueClicked = true
+                GradientButton(title: "Sign Up", action: {
+                    signUpClicked = true
                 }, isEnabled: true)
+                .padding(.top)
                 
                 Spacer()
+                
+                Button(action: {
+                    navigateToLogin = true
+                }) {
+                    HStack(spacing: 5) {
+                        Text("Already have an account? ")
+                            .bold()
+                            .foregroundStyle(Color.gray1)
+                        Text("Login")
+                            .bold()
+                            .foregroundStyle(Color.blue1)
+                    }
+                }
+                .padding()
             }
-            .padding(.horizontal)
+            .padding()
             .ignoresSafeArea(edges: .all)
             .background(.whitePrimary)
-            .navigationDestination(isPresented: $continueClicked) {
-                SetPasswordView()
+            .navigationDestination(isPresented: $signUpClicked) {
+                SelectTemplateGoalsView()
+            }
+            .navigationDestination(isPresented: $navigateToLogin) {
+                LoginUserView()
             }
             .toolbarVisibility(.hidden)
             

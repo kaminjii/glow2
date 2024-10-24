@@ -38,7 +38,7 @@ struct HomeScreenView: View {
                     EditGoalProgressView(goal: .constant(goal)) {
                         fetchGoalsForToday()
                     }
-                    .presentationDetents([.fraction(0.5), .large])
+                    .presentationDetents([.fraction(0.4), .large])
                 }
                 
                 .onAppear {

@@ -50,7 +50,7 @@ struct SelectTemplateGoalsView: View {
             .ignoresSafeArea(edges: .all)
             .background(.whitePrimary)
             .navigationDestination(isPresented: $done) {
-                SetPasswordView()
+                ContentView()
             }
             .toolbarVisibility(.hidden)
             .sheet(isPresented: $showAddGoal) {

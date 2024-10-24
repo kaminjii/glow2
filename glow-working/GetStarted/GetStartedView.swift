@@ -1,42 +1,67 @@
 import SwiftUI
 
 struct GetStartedView: View {
-    @State private var navigateToLoginOrRegister = false
+    @State private var navigateToLogin = false
     
     var body: some View {
         NavigationStack {
             ZStack(alignment: .topLeading) {
-                GetStartedBackground()
+                Color.yellow1.ignoresSafeArea(.all)
+                GetStartedBackground().ignoresSafeArea(.all)
 
                 VStack {
                     Spacer()
-                    GlowLogoView()
+                    glowLogo
+                    taglineText
                     Spacer()
                 }
 
                 VStack {
                     Spacer()
-                    TaglineText()
                     Spacer()
                 }
 
                 VStack {
                     Spacer()
-                    // Button action triggers navigation
                     GradientButton(title: "Get Started", action: {
-                        navigateToLoginOrRegister = true
+                        navigateToLogin = true
                     }, isEnabled: true)
-                    .padding(.bottom, 40)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
+                    
+                    Button(action: {
+                        navigateToLogin = true
+                    }) {
+                        HStack(spacing: 5) {
+                            Text("Already have an account? ")
+                                .foregroundStyle(Color.gray1)
+                            Text("Login")
+                                .bold()
+                                .foregroundStyle(Color.blue1)
+                        }
+                    }
+                    .padding()
                 }
             }
-            .ignoresSafeArea(edges: .all)
-            .background(.yellow1)
             
-            .navigationDestination(isPresented: $navigateToLoginOrRegister) {
-                LoginOrRegisterView()
+            .navigationDestination(isPresented: $navigateToLogin) {
+                LoginUserView()
             }
         }
+    }
+    
+    var glowLogo: some View {
+        Image("glowLogoWhite")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 172)
+            .frame(maxWidth: .infinity)
+    }
+    
+    var taglineText: some View {
+        Text("Small steps turn into big growth")
+            .font(.headline)
+            .foregroundStyle(Color.gray1)
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 

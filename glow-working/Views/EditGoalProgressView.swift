@@ -19,6 +19,7 @@ struct EditGoalProgressView: View {
             backgroundView
             contentView
         }
+        .padding(.horizontal)
         .edgesIgnoringSafeArea(.bottom)
         .gesture(dragGesture)
         .onAppear(perform: viewModel.fetchGoalData)
@@ -26,14 +27,16 @@ struct EditGoalProgressView: View {
     
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: 0, style: .continuous)
-            .fill(Color.sheet1)
+            .fill(Color.whitePrimary)
     }
     
     private var contentView: some View {
         VStack(spacing: 0) {
+            Spacer()
             goalInfo
             goalInputSection
             saveButton
+                .padding(.bottom)
         }
         .padding()
         .frame(height: 375)
