@@ -48,7 +48,7 @@ struct ProfileScreenView: View {
             ZStack{
                 Color.whitePrimary.edgesIgnoringSafeArea(.all)
                 
-                VStack(alignment: .trailing, spacing: -45) {
+                VStack(alignment: .trailing) {
                     
                     VStack(spacing: 20){
                         // Top image for profile
@@ -169,7 +169,8 @@ struct ProfileScreenView: View {
                                 Text("Total Achievements: \(totalAchievements)")
                                     .font(.system(size: 14))
                                     .foregroundColor(.gray)
-                                    .padding(.top, 8)
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                    .padding(8)
                             }
                         }
                         .onAppear {
