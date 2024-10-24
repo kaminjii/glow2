@@ -50,22 +50,14 @@ struct ProfileScreenView: View {
                 
                 VStack(alignment: .trailing, spacing: -45) {
                     
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 28))
-                        .opacity(0.5)
-                        .padding(30)
-                        .onTapGesture {
-                            navigationPath.append("editProfile")
-                        }
-                    
                     VStack(spacing: 20){
                         // Top image for profile
                         Image(.star3)
                             .resizable()
                             .scaledToFit()
                             .frame(width: 141, height: 141)
-                            .shadow(color: .blackShadow, radius: 40, x: 15, y: 15)
-                        
+                            .shadow(color: Color.black.opacity(0.20), radius: 5, y: 8)
+
                         // Display user's first name from Firebase
                         Text("Kaitlin") // Replace with actual firstName from Firebase
                             .font(.largeTitle)
@@ -76,18 +68,14 @@ struct ProfileScreenView: View {
                             
                             // Recorded Days section
                             HStack(spacing: 15) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 4)
-                                    //                                    .scaledToFit()
-                                        .frame(width: 31, height: 31)
-                                        .background(.white.opacity(0.1))
-                                    
                                     Image(systemName: "pencil")
                                         .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                        .opacity(0.5)
-                                }
-                                //                            .background(Color.white.opacity(0.1))
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 4)
+                                                .fill(Color.white.opacity(0.1))
+                                                .frame(width: 31, height: 31)
+                                        )
+                                        .foregroundColor(Color.white.opacity(0.5))
                                 
                                 VStack(alignment: .leading) {
                                     Text("Recorded Days")
@@ -110,17 +98,14 @@ struct ProfileScreenView: View {
                             
                             // Streak section
                             HStack(spacing: 15) {
-                                ZStack {
-                                    RoundedRectangle(cornerRadius: 4)
-                                    //                                    .scaledToFit()
-                                        .frame(width: 31, height: 31)
-                                        .background(.white.opacity(0.1))
-                                    Image(systemName: "flame.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.white)
-                                        .opacity(0.5)
-                                }
-                                //                            .background(Color.white.opacity(0.1))
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 24))
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .fill(Color.white.opacity(0.1))
+                                            .frame(width: 31, height: 31)
+                                    )
+                                    .foregroundColor(Color.white.opacity(0.5))
                                 
                                 VStack(alignment: .leading) {
                                     Text("Streak")
@@ -138,6 +123,9 @@ struct ProfileScreenView: View {
                         .background(Color.blue1)
                         .cornerRadius(16)
                         .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
+                        .shadow(color: .black.opacity(0.2), radius: 10)
+
                         
                         VStack(alignment: .leading) {
                             // Achievements title
@@ -145,16 +133,18 @@ struct ProfileScreenView: View {
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .padding(.top, 24)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
                         }
                         
                         
                         // For each loop for achievements
                         ScrollView {
-                            VStack(spacing: 10) {
+                            VStack(spacing: 16) {
                                 ForEach(achievementsPlaceholder(), id: \.self) { achievement in
                                     HStack {
                                         GradientIcon(iconName: "trophy.fill")
-                                            .foregroundColor(Color.black)
+                                            .foregroundColor(Color.black1)
                                             .padding(.horizontal)
                                         VStack(alignment: .leading) {
                                             Text(achievement.title)
@@ -166,11 +156,13 @@ struct ProfileScreenView: View {
                                         Spacer()
                                     }
                                     .padding()
-                                    .background(Color.white)
-                                    .cornerRadius(8)
-                                    .shadow(color: .blackShadow.opacity(0.1), radius: 10, x: 0, y: 5)
+                                    .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
+                                    .shadow(color: .blackShadow, radius: 10, y: 5)
                                 }
+
                             }
+                            .padding(.horizontal)
+
                             
                             VStack (alignment: .trailing){
                                 // Total Achievements
@@ -189,7 +181,6 @@ struct ProfileScreenView: View {
                         
                         Spacer()
                     }
-                    .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 
@@ -197,6 +188,16 @@ struct ProfileScreenView: View {
             .navigationDestination(for: String.self) { value in
                 if value == "editProfile" {
                     EditProfileView(navigationPath: $navigationPath)
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        navigationPath.append("editProfile")
+                    }) {
+                        Image(systemName: "square.and.pencil")
+                            .foregroundStyle(Color.gray1)
+                    }
                 }
             }
         }
