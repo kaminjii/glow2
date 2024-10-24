@@ -3,10 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @State private var selectedTab: Int = 0
 
+
     var body: some View {
         let dateHolder = DateHolder()
-        
-
         
         TabView (selection: $selectedTab){
             CalendarView(selectedTab: $selectedTab)
