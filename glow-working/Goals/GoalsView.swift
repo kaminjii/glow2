@@ -35,9 +35,9 @@ struct GoalsView: View {
                 fetchGoalsForToday()
             }
             .confirmationDialog("", isPresented: $showActionSheet) {
-//                Button("Edit Goal") {
-//                    showEditGoal = true
-//                }
+                Button("Edit Goal") {
+                    showEditGoal = true
+                }
                 Button("Remove Goal", role: .destructive) {
                     showActionSheet = false
                     showAlert = true
@@ -55,6 +55,9 @@ struct GoalsView: View {
                     showAlert = false
                 }
                 
+            }
+            .sheet(isPresented: $showEditGoal) {
+                EditGoalModal()
             }
 //            .sheet(isPresented: $showEditGoal) {
 //                EditGoalModal(goal: selectedGoal)

@@ -4,8 +4,8 @@ import SymbolPicker
 struct AddGoalModal: View {
     let units = ["kg", "g", "lb", "oz"]
     
-    @Binding var isPresented: Bool
-    
+    @Environment(\.presentationMode) var presentationMode
+
     @State private var icon: String = "star.fill"
     @State private var iconPickerPresented = false
 
@@ -20,7 +20,7 @@ struct AddGoalModal: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Button(action: { isPresented = false }) {
+            Button(action: { presentationMode.wrappedValue.dismiss() }) {
                 Image(systemName: "xmark")
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .foregroundStyle(.gray1)
@@ -97,7 +97,7 @@ struct AddGoalModal: View {
                 }
             }
             
-            GradientButton(title: "Add", action: {}, isEnabled: isButtonEnabled)
+            GradientButton(title: "Add", action: { presentationMode.wrappedValue.dismiss() }, isEnabled: isButtonEnabled)
                 .padding(.vertical)
     
         }
@@ -113,6 +113,6 @@ struct AddGoalModal: View {
 
 struct MyModalView_Previews: PreviewProvider {
     static var previews: some View {
-        AddGoalModal(isPresented: .constant(true), goalName: "", goalDescription: "")
+        AddGoalModal(goalName: "", goalDescription: "")
     }
 }
