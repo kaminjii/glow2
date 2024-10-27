@@ -2,117 +2,162 @@ import SwiftUI
 import SymbolPicker
 
 struct AddGoalModal: View {
-    let units = ["kg", "g", "lb", "oz"]
+    let units = [
+        "Distance": ["kilometers", "meters", "centimeters", "miles", "yards", "feet", "inches"],
+        "Time": ["hours", "minutes", "seconds"]
+    ]
     
     @Environment(\.presentationMode) var presentationMode
-
     @State private var icon: String = "star.fill"
     @State private var iconPickerPresented = false
-
     @State var goalName: String = ""
     @State var goalDescription: String = ""
     @State var goalUnit: String = ""
     @State private var quantity: String = ""
-    
     @State private var isButtonEnabled: Bool = false
-
-
+    
+    // New property to handle goal addition
+    var onAddGoal: (TemplateGoal) -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Image(systemName: "xmark")
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+        ZStack {
+            Color.whitePrimary.edgesIgnoringSafeArea(.all)
+            
+            NavigationStack {
+                VStack(spacing: 16) {
+                    iconSection
+                    goalDetailsSection
+                    unitAndQuantitySection
+                    Spacer()
+                }
+                .padding(.horizontal)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            let newGoal = TemplateGoal(iconName: icon, title: goalName, description: goalDescription, checked: true)
+                            onAddGoal(newGoal) // Call the closure with the new goal
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var iconSection: some View {
+        VStack {
+            ZStack {
+                LinearGradient(
+                    gradient: Gradient(colors: [Color.yellowGradientStart, Color.yellowGradientEnd]),
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                Image(systemName: icon)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(30)
+                    .foregroundColor(.black1)
+            }
+            .frame(width: 175, height: 175)
+            .cornerRadius(100)
+            .padding(.bottom, 3)
+            
+            Button(action: { iconPickerPresented = true }) {
+                Text("Edit Icon")
+                    .padding(5)
+                    .frame(width: 125)
+                    .background(Capsule().fill(Color.gray2))
                     .foregroundStyle(.gray1)
             }
-            
-            Text("Add Other Goal")
-                .font(.title)
-            
-            HStack(spacing: 12) {
-                ZStack {
-                    GradientIcon(iconName: icon)
-                    
-                    Button(action: { iconPickerPresented = true }) {
-                        HStack {
-                            Image(systemName:"pencil")
-                                .resizable()
-                                .scaledToFit()
-                                .padding(10)
-                                .foregroundColor(.white)
-                        }
-                        .frame(width: 50, height: 50)
-                        .background(Color.gray.opacity(0.3))
-                        .cornerRadius(30)
-                    }
-                    .sheet(isPresented: $iconPickerPresented) {
-                        SymbolPicker(symbol: $icon)
-                    }
-                }
-                
-                AppTextField(icon: "trophy.fill", placeholder: "Goal name", label: $goalName)
+            .sheet(isPresented: $iconPickerPresented) {
+                SymbolPicker(symbol: $icon)
             }
-                
-                AppTextField(icon: "pencil", placeholder: "Goal description", label: $goalDescription)
-             
-            HStack {
-                VStack(spacing: 3) {
-                    Text("Unit")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .font(.subheadline)
-                        .foregroundStyle(.gray1)
-                    
-                    Picker("Select a Unit", selection: $goalUnit) {
-                        ForEach(units, id: \.self) { unit in
-                            Text(unit).tag(unit)
-                        }
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    .foregroundStyle(.gray1)
-                    .frame(maxWidth: .infinity,alignment: .trailing)
-                    .frame(height: 40)
-                    .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
-                    .onChange(of: goalUnit) { oldValue, newValue in
-                        if !newValue.isEmpty {
-                            quantity = ""
-                            isButtonEnabled = true
-                        } else {
-                            isButtonEnabled = false
-                        }
-                    }
-                }
-                
-                
-                if isButtonEnabled {
-                    VStack(spacing: 3) {
-                        Text("Quantity")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .font(.subheadline)                            .foregroundStyle(.gray1)
-                        TextField("0", text: $quantity)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
-                    }
-                }
+        }
+        .padding(.bottom)
+    }
+
+    private var goalDetailsSection: some View {
+        VStack(spacing: 16) {
+            AppTextField(icon: "trophy.fill", placeholder: "Goal name", label: $goalName)
+            AppTextField(icon: "pencil", placeholder: "Goal description", label: $goalDescription)
+        }
+    }
+
+    private var unitAndQuantitySection: some View {
+        HStack {
+            NavigationLink(destination: UnitSelectionView(selectedUnit: $goalUnit, units: units)) {
+                unitPicker
             }
-            
-            GradientButton(title: "Add", action: { presentationMode.wrappedValue.dismiss() }, isEnabled: isButtonEnabled)
-                .padding(.vertical)
-    
+            if isButtonEnabled {
+                quantityField
+            }
+        }
+        .onChange(of: goalUnit) { oldValue, newValue in
+            isButtonEnabled = !newValue.isEmpty
+            if !isButtonEnabled { quantity = "" }
+        }
+    }
+
+    private var unitPicker: some View {
+        HStack {
+            Text("Unit")
+                .foregroundStyle(.gray1)
+            Text(goalUnit.isEmpty ? "" : goalUnit)
+                .foregroundStyle(.black1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.gray1)
         }
         .padding()
-        .frame(maxWidth: 300)
-        .background(Color.whitePrimary)
-        .cornerRadius(12)
-        .shadow(radius: 20)
-        .padding()
-        .frame(maxHeight: .infinity, alignment: .center)
+        .frame(height: 50)
+        .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
+    }
+    
+    private var quantityField: some View {
+        TextField("Quantity", text: $quantity)
+            .padding()
+            .frame(width: 100, height: 50, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
+    }
+}
+
+struct UnitSelectionView: View {
+    @Binding var selectedUnit: String
+    let units: [String: [String]]
+    
+    var body: some View {
+        List {
+            ForEach(units.keys.sorted(), id: \.self) { section in
+                Section(header: Text(section)) {
+                    ForEach(units[section] ?? [], id: \.self) { unit in
+                        Button(action: {
+                            selectedUnit = unit
+                        }) {
+                            HStack {
+                                Text(unit)
+                                    .foregroundStyle(.black1)
+                                if selectedUnit == unit {
+                                    Spacer()
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("Select Unit")
     }
 }
 
 struct MyModalView_Previews: PreviewProvider {
     static var previews: some View {
-        AddGoalModal(goalName: "", goalDescription: "")
+        AddGoalModal(goalName: "", goalDescription: "", onAddGoal: { _ in })
     }
 }

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct AddOtherGoal: View {
+    @Binding var isPresented: Bool
+    
     var body: some View {
         HStack {
             GradientIcon(iconName: "star.fill")
@@ -12,7 +14,9 @@ struct AddOtherGoal: View {
             .padding(.horizontal, 10)
             
             Spacer()
-            Button(action: {}) {
+            Button(action: {
+                isPresented = true
+            }) {
                 Image(systemName: "ellipsis")
                     .foregroundStyle(.gray1)
             }
@@ -24,5 +28,5 @@ struct AddOtherGoal: View {
 }
 
 #Preview {
-    AddOtherGoal()
+    AddOtherGoal(isPresented: .constant(true))
 }
