@@ -6,12 +6,30 @@
 //
 
 import SwiftUI
+import FirebaseAuth
 
 struct LoginUserView: View {
     @State var email: String = ""
     @State var password: String = ""
-    @State private var login: Bool = false
     @State private var navigateToSignup: Bool = false
+    @State private var isAuthenticating: Bool = false
+    
+    @EnvironmentObject var viewModel: AuthenticationViewModel
+    
+    private func signInWithEmailPassword() {
+        isAuthenticating = true
+        Task {
+            viewModel.email = email
+            viewModel.password = password
+            
+            if await viewModel.signInWithEmailPassword() {
+                print("Login successful")
+            } else {
+                print("Login failed: \(viewModel.errorMessage)")
+            }
+            isAuthenticating = false
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -22,16 +40,14 @@ struct LoginUserView: View {
                     .font(.title)
                 
                 VStack(spacing: 0) {
-                    
                     AppTextField(icon: "envelope.fill", placeholder: "Email", label: $email)
                         .padding(.top)
-
                     
-                    AppTextField(icon: "lock.fill", placeholder: "Password", label: $password)
+                    AppTextField(icon: "lock.fill", placeholder: "Password", isSecure: true, label: $password)
                         .padding(.top)
                     
                     Button(action: {
-                        
+                        // Forgot password action
                     }) {
                         Text("Forgot Password?")
                             .foregroundStyle(Color.gray)
@@ -39,15 +55,20 @@ struct LoginUserView: View {
                     }
                     .padding(.top)
                     .frame(maxWidth: .infinity, alignment: .trailing)
-                    
                 }
                 
-                GradientButton(title: "Login", action: {
-                    login = true
-                }, isEnabled: true)
-                .padding(.top)
-                
-
+                if isAuthenticating {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                        .padding(.top)
+                } else {
+                    GradientButton(
+                        title: "Login",
+                        action: signInWithEmailPassword,
+                        isEnabled: !isAuthenticating
+                    )
+                    .padding(.top)
+                }
                 
                 Spacer()
                 
@@ -55,7 +76,7 @@ struct LoginUserView: View {
                     navigateToSignup = true
                 }) {
                     HStack(spacing: 5) {
-                        Text("Don't have an account? ")
+                        Text("Don't have an account yet? ")
                             .bold()
                             .foregroundStyle(Color.gray1)
                         Text("Sign up")
@@ -69,9 +90,6 @@ struct LoginUserView: View {
             .ignoresSafeArea(edges: .all)
             .background(.whitePrimary)
             .toolbarVisibility(.hidden)
-            .navigationDestination(isPresented: $login) {
-                ContentView()
-            }
             .navigationDestination(isPresented: $navigateToSignup) {
                 RegisterNewUserView()
             }

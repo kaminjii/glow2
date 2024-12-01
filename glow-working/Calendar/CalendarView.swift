@@ -3,23 +3,21 @@ import SwiftUI
 struct CalendarView: View {
     @Binding var selectedTab: Int
     @State private var isDailyView: Bool = false
-
+    @StateObject private var dateHolder = DateHolder()
+    
     var body: some View {
-        
         NavigationView {
             ZStack {
                 Color.whitePrimary.edgesIgnoringSafeArea(.all)
                 
                 VStack {
-                    
-                    
                     if isDailyView {
                         DailyListView()
-                            .environmentObject(DateHolder())
+                            .environmentObject(dateHolder)
                             .transition(.opacity)
                     } else {
                         MonthlyCalendarView()
-                            .environmentObject(DateHolder())
+                            .environmentObject(dateHolder)
                             .transition(.opacity)
                     }
                 }

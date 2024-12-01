@@ -1,18 +1,20 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 struct HomeScreenView: View {
     @Binding var selectedTab: Int
     @State private var lastLogDate: Date? = UserDefaults.standard.object(forKey: "lastLogDate") as? Date
-
     @State private var editableGoals: [Goal] = []
-    
     @State var note: String = ""
     @State private var selectedGoal: Goal? = nil
     @State private var showTodaysProgress = false
     @State private var totalProgress: CGFloat = 0.0
-
     @State private var goals: [Goal] = []
+    @State private var userName: String = ""
+    @StateObject private var viewModel = ViewModel()
+    
+    private let db = Firestore.firestore()
     
     var body: some View {
         NavigationView {
@@ -42,6 +44,8 @@ struct HomeScreenView: View {
                 }
                 
                 .onAppear {
+                    viewModel.setupDailyLogAndGoals()
+                    fetchUserName()
                     fetchGoalsForToday()
                 }
             }
@@ -56,7 +60,7 @@ struct HomeScreenView: View {
                 .ignoresSafeArea(.all)
             
             VStack(spacing: 0) {
-                Text("Hello Kaitlin!")
+                Text("Hello \(userName)!")
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .font(.largeTitle).bold()
                     .padding(.horizontal, 30)
@@ -123,14 +127,33 @@ struct HomeScreenView: View {
         }
     }
     
+    private func fetchUserName() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        db.collection("users").document(userId).getDocument { document, error in
+            if let error = error {
+                print("Error fetching user data: \(error)")
+                return
+            }
+            
+            if let document = document, document.exists {
+                userName = document.data()?["fullName"] as? String ?? ""
+            }
+            
+            print(userName)
+        }
+    }
+    
     private func fetchGoalsForToday() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
         let calendar = Calendar.current
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
-        // Fetch goals for today
-        Firestore.firestore().collection("goals")
+        // Fetch goals for today from user's subcollection
+        db.collection("users").document(userId).collection("goals")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .whereField("deleted", isEqualTo: false)
@@ -148,12 +171,15 @@ struct HomeScreenView: View {
     }
 
     private func fetchDailyLogForToday() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
         let calendar = Calendar.current
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
-        Firestore.firestore().collection("dailyLogs")
+        // Fetch daily log from user's subcollection
+        db.collection("users").document(userId).collection("dailyLogs")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .getDocuments { querySnapshot, error in
@@ -163,13 +189,11 @@ struct HomeScreenView: View {
                     if let dailyLogDoc = querySnapshot?.documents.first {
                         let totalProgressValue = dailyLogDoc.data()["totalProgress"] as? Double ?? 0.0
                         
-                        // Log the fetched total progress value
                         print("Fetched total progress value: \(totalProgressValue)")
                         
-                        // Update the UI on the main thread
                         DispatchQueue.main.async {
                             self.totalProgress = CGFloat(totalProgressValue)
-                            print("Updated total progress: \(self.totalProgress)") // Log the updated value
+                            print("Updated total progress: \(self.totalProgress)")
                         }
                     } else {
                         DispatchQueue.main.async {
@@ -180,7 +204,6 @@ struct HomeScreenView: View {
                 }
             }
     }
-
 
     
     private var starImage: String {

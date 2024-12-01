@@ -2,6 +2,9 @@ import SwiftUI
 
 struct GetStartedView: View {
     @State private var navigateToLogin = false
+    @State private var navigateToSignUp = false
+    @StateObject private var authenticationViewModel = AuthenticationViewModel()
+
     
     var body: some View {
         NavigationStack {
@@ -24,7 +27,7 @@ struct GetStartedView: View {
                 VStack {
                     Spacer()
                     GradientButton(title: "Get Started", action: {
-                        navigateToLogin = true
+                        navigateToSignUp = true
                     }, isEnabled: true)
                     .padding(.horizontal, 20)
                     
@@ -45,6 +48,10 @@ struct GetStartedView: View {
             
             .navigationDestination(isPresented: $navigateToLogin) {
                 LoginUserView()
+            }
+            .navigationDestination(isPresented: $navigateToSignUp) {
+                RegisterNewUserView()
+                    .environmentObject(authenticationViewModel)
             }
         }
     }

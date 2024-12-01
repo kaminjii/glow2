@@ -1,21 +1,21 @@
 import SwiftUI
 import FirebaseCore
 import FirebaseFirestore
+import FirebaseAuth
 
 struct GoalsView: View {
     @Binding var selectedTab: Int
-
     @StateObject private var goalRepository = GoalRepository()
     @State private var selectedGoal: Goal? = nil
     @State private var showActionSheet = false
     @State private var showAlert = false
     @State private var showEditGoal = false
-
     @State private var goals: [Goal] = []
-
+    
+    private let db = Firestore.firestore()
+    
     var body: some View {
-        
-        ZStack{
+        ZStack {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
             
             VStack {
@@ -45,8 +45,7 @@ struct GoalsView: View {
                 .foregroundStyle(.red)
             }
             .alert("Remove Goal", isPresented: $showAlert) {
-                Button("Cancel", role: .cancel)
-                {
+                Button("Cancel", role: .cancel) {
                     self.showAlert = false
                 }
                 Button("Remove", role: .destructive) {
@@ -54,26 +53,25 @@ struct GoalsView: View {
                     selectedGoal = nil
                     showAlert = false
                 }
-                
             }
             .sheet(isPresented: $showEditGoal) {
                 EditGoalModal()
             }
-//            .sheet(isPresented: $showEditGoal) {
-//                EditGoalModal(goal: selectedGoal)
-//            }
-
         }
     }
-
+    
     private func fetchGoalsForToday() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No authenticated user")
+            return
+        }
+        
         let calendar = Calendar.current
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-
-        // Fetch goals for today
-        Firestore.firestore().collection("goals")
+        
+        db.collection("users").document(userId).collection("goals")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .whereField("deleted", isEqualTo: false)
@@ -89,45 +87,41 @@ struct GoalsView: View {
     }
     
     private func addGoal() {
-        let newGoal = Goal(
-            id: nil,
-            date: Timestamp(date: Date()),
-            deleted: false,
-            detail: "New Goal",
-            icon: "star",
-            name: "My Goal",
-            quantityComplete: 0.0,
-            quantityGoal: 1.0,
-            unit: "units"
-        )
-        goalRepository.addGoal(newGoal)
+        
     }
     
     private func editGoal(_ goal: Goal?) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No authenticated user")
+            return
+        }
         guard let goal = goal else { return }
+        
         selectedGoal = goal
         showEditGoal = true
     }
-
+    
     private func deleteGoal(_ goal: Goal?) {
-        guard let goal = goal, let goalId = goal.id else { return }
-
-        // Update the deleted property of the goal to true in Firestore
-        Firestore.firestore().collection("goals").document(goalId).updateData([
-            "deleted": true
-        ]) { error in
-            if let error = error {
-                print("Error marking goal as deleted: \(error)")
-            } else {
-                print("Goal marked as deleted successfully.")
-                fetchGoalsForToday() // Refresh goals after deletion
-            }
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No authenticated user")
+            return
         }
+        guard let goal = goal, let goalId = goal.id else { return }
+        
+        db.collection("users").document(userId).collection("goals")
+            .document(goalId)
+            .updateData([
+                "deleted": true
+            ]) { error in
+                if let error = error {
+                    print("Error marking goal as deleted: \(error)")
+                } else {
+                    print("Goal marked as deleted successfully.")
+                    fetchGoalsForToday()
+                }
+            }
     }
-
 }
-
-
 
 #Preview {
     GoalsView(selectedTab: .constant(3))

@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CheckBoxView: View {
     @Binding var checked: Bool
+    var onToggle: () -> Void
+    
 
     var body: some View {
         Image(systemName: checked ? "checkmark.square.fill" : "square")
@@ -11,10 +13,11 @@ struct CheckBoxView: View {
             .foregroundColor(checked ? Color(UIColor.blue1) : Color.secondary)
             .onTapGesture {
                 self.checked.toggle()
+                onToggle()
             }
     }
 }
 
 #Preview {
-    CheckBoxView(checked: .constant(false))
+    CheckBoxView(checked: .constant(false), onToggle: {})
 }

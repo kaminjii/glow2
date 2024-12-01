@@ -1,14 +1,29 @@
 import FirebaseFirestore
+import FirebaseAuth
 
 class DailyLogRepository: ObservableObject {
     private let db = Firestore.firestore()
     
+    private func getCurrentUserId() -> String? {
+        return Auth.auth().currentUser?.uid
+    }
+    
+    private func getUserDailyLogsCollection() -> CollectionReference? {
+        guard let userId = getCurrentUserId() else { return nil }
+        return db.collection("users").document(userId).collection("dailyLogs")
+    }
+    
     func fetchDailyLogs(for date: Date, completion: @escaping ([DailyLog]) -> Void) {
+        guard let logsCollection = getUserDailyLogsCollection() else {
+             completion([])
+             return
+        }
+        
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
-        db.collection("dailyLogs")
+        logsCollection
             .whereField("date", isGreaterThanOrEqualTo: startOfDay)
             .whereField("date", isLessThan: endOfDay)
             .getDocuments { (querySnapshot, error) in
@@ -25,8 +40,13 @@ class DailyLogRepository: ObservableObject {
     }
     
     func addDailyLog(_ dailyLog: DailyLog, completion: @escaping (Bool) -> Void) {
+        guard let logsCollection = getUserDailyLogsCollection() else {
+            completion(false)
+            return
+        }
+        
         do {
-            let _ = try db.collection("dailyLogs").addDocument(from: dailyLog) { error in
+            let _ = try logsCollection.addDocument(from: dailyLog) { error in
                 if let error = error {
                     print("Error adding daily log: \(error)")
                     completion(false)
@@ -42,10 +62,14 @@ class DailyLogRepository: ObservableObject {
     }
     
     func updateDailyLog(_ updatedLog: DailyLog, completion: @escaping (Bool) -> Void) {
-        guard let id = updatedLog.id else { return }
+        guard let logsCollection = getUserDailyLogsCollection(),
+              let id = updatedLog.id else {
+            completion(false)
+            return
+        }
         
         do {
-            try db.collection("dailyLogs").document(id).setData(from: updatedLog) { error in
+            try logsCollection.document(id).setData(from: updatedLog) { error in
                 if let error = error {
                     print("Error updating daily log: \(error)")
                     completion(false)
@@ -61,57 +85,60 @@ class DailyLogRepository: ObservableObject {
     }
     
     func createDailyLog(completion: @escaping () -> Void) {
-        // Get the current date
+        guard let logsCollection = getUserDailyLogsCollection() else {
+            completion()
+            return
+        }
+        
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        
-        // Get the start and end of today
-        let todayStart = today
         let todayEnd = calendar.date(byAdding: .day, value: 1, to: today)!
-
-        // Check for existing daily log for today
-        db.collection("dailyLogs")
-            .whereField("date", isGreaterThan: Timestamp(date: todayStart))
+        
+        logsCollection
+            .whereField("date", isGreaterThan: Timestamp(date: today))
             .whereField("date", isLessThan: Timestamp(date: todayEnd))
             .getDocuments { logSnapshot, logError in
                 if let logError = logError {
                     print("Error fetching today's daily log: \(logError)")
-                    completion() // Call completion in case of error
+                    completion()
                     return
                 }
                 
-                // Check if there is already a daily log for today
                 if let logDocuments = logSnapshot?.documents, !logDocuments.isEmpty {
                     print("Daily log already exists for today. Skipping creation.")
                 } else {
-                    // If no daily log exists for today, create one
                     let dailyLogData: [String: Any] = [
                         "date": Timestamp(date: Date()),
                         "image": "",
                         "note": "",
                         "totalProgress": 0.0
-                        
                     ]
                     
-                    self.db.collection("dailyLogs").addDocument(data: dailyLogData) { error in
+                    logsCollection.addDocument(data: dailyLogData) { error in
                         if let error = error {
                             print("Error adding new daily log: \(error)")
                         } else {
                             print("Successfully added daily log for today.")
                         }
+                        completion()
                     }
                 }
-                completion() // Call completion after checking for the log
             }
     }
     
     func updateTotalProgress(for date: Date, completion: @escaping () -> Void) {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date) // Start of the day
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)! // End of the day
+        guard let userId = getCurrentUserId() else {
+            completion()
+            return
+        }
         
-        // Query all goals for the specified date range
-        db.collection("goals")
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        let goalsCollection = db.collection("users").document(userId).collection("goals")
+        
+        goalsCollection
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .whereField("deleted", isEqualTo: false)
@@ -124,43 +151,39 @@ class DailyLogRepository: ObservableObject {
                 
                 guard let documents = snapshot?.documents, !documents.isEmpty else {
                     print("No goals found for today.")
-                    // If no goals, you might want to set total progress to 0 or handle as needed
                     self.setTotalProgress(for: startOfDay, to: 0) {
                         completion()
                     }
                     return
                 }
                 
-                // Calculate average progress
                 let totalProgress = documents.reduce(0.0) { (result, document) in
                     let goalData = document.data()
                     let quantityComplete = goalData["quantityComplete"] as? Double ?? 0.0
-                    let quantityGoal = goalData["quantityGoal"] as? Double ?? 1.0 // Avoid division by zero
-                    
-                    // Calculate percentage complete for this goal
+                    let quantityGoal = goalData["quantityGoal"] as? Double ?? 1.0
                     let percentComplete = quantityGoal > 0 ? quantityComplete / quantityGoal : 0.0
                     return result + percentComplete
                 }
-
-                // Calculate average of percent completes
-                let averageProgress = documents.isEmpty ? 0.0 : totalProgress / Double(documents.count)
-
                 
-                // Update the total progress in the daily log
+                let averageProgress = documents.isEmpty ? 0.0 : totalProgress / Double(documents.count)
+                
                 self.setTotalProgress(for: startOfDay, to: averageProgress) {
                     completion()
                 }
             }
     }
-
         
     private func setTotalProgress(for date: Date, to totalProgress: Double, completion: @escaping () -> Void) {
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date) // Start of the day
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)! // End of the day
+        guard let logsCollection = getUserDailyLogsCollection() else {
+            completion()
+            return
+        }
         
-        // Check if a daily log exists for today
-        db.collection("dailyLogs")
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
+        logsCollection
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .getDocuments { snapshot, error in
@@ -176,8 +199,7 @@ class DailyLogRepository: ObservableObject {
                     return
                 }
                 
-                // Update the total progress in the found daily log
-                let dailyLogRef = self.db.collection("dailyLogs").document(document.documentID)
+                let dailyLogRef = logsCollection.document(document.documentID)
                 dailyLogRef.updateData(["totalProgress": totalProgress]) { error in
                     if let error = error {
                         print("Error updating total progress: \(error)")

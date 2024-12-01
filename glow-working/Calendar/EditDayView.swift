@@ -6,6 +6,7 @@ struct EditExistingDayView: View {
 
     @StateObject private var dailyLogRepository = DailyLogRepository()
     @StateObject private var goalRepository = GoalRepository()
+    private let db = Firestore.firestore()
 
     @State private var dailyLog: DailyLog?
     @State private var selectedGoal: Goal? = nil

@@ -1,31 +1,34 @@
-//
-//  SplashScreenView.swift
-//  glow-working
-//
-//  Created by Kaitlin Wood on 10/23/24.
-//
-
 import SwiftUI
 
 struct SplashScreenView: View {
-    @State var isActive : Bool = false
-    @StateObject private var viewModel = ViewModel()
+    @State var isActive: Bool = false
+    @EnvironmentObject var authViewModel: AuthenticationViewModel
     
     var body: some View {
-        if isActive {
-            GetStartedView()
-        } else {
+        if !isActive {
+            // Splash Screen
             ZStack {
                 Color.whitePrimary.edgesIgnoringSafeArea(.all)
                 
                 Image("glowLogoYellow")
             }
             .onAppear {
-                viewModel.setupDailyLogAndGoals()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     withAnimation {
                         self.isActive = true
                     }
+                }
+            }
+        } else {
+            // Navigate based on auth state
+            Group {
+                switch authViewModel.authenticationState {
+                case .authenticated:
+                    ContentView()
+                case .authenticating:
+                    ProgressView()
+                case .unauthenticated:
+                    GetStartedView()
                 }
             }
         }
@@ -34,4 +37,5 @@ struct SplashScreenView: View {
 
 #Preview {
     SplashScreenView()
+        .environmentObject(AuthenticationViewModel())
 }

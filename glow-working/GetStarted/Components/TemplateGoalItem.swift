@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TemplateGoalItem: View {
     @Binding var goal: TemplateGoal
+    var onToggle: () -> Void
     
     var body: some View {
         HStack {
@@ -19,16 +20,14 @@ struct TemplateGoalItem: View {
             
             Spacer()
 
-            CheckBoxView(checked: $goal.checked)
+            CheckBoxView(checked: $goal.checked, onToggle: onToggle)
         }
         .padding()
         .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
         .frame(maxWidth: .infinity)
+        .onTapGesture {
+            goal.checked.toggle()
+            onToggle() 
+        }
     }
-}
-
-#Preview {
-    let sampleGoal = TemplateGoal(iconName: "figure.run", title: "Exercise", description: "Exercise for 1 hour", checked: false)
-    
-    TemplateGoalItem(goal: .constant(sampleGoal))
 }

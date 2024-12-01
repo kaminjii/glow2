@@ -1,12 +1,15 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseAuth
 
 struct MonthlyCalendarView: View {
     @EnvironmentObject var dateHolder: DateHolder
-    @FirestoreQuery(collectionPath: "dailyLogs") var dailyLogs: [DailyLog]
     @State private var selectedDate: DailyLog?
     @State private var showEditDay = false
-
+    @State private var dailyLogs: [DailyLog] = []
+    
+    private let db = Firestore.firestore()
+    
     var body: some View {
         ZStack {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
@@ -24,7 +27,7 @@ struct MonthlyCalendarView: View {
                     DayCard(
                         date: selectedDate.date.dateValue(),
                         progress: selectedDate.totalProgress,
-                        note: selectedDate.note!,
+                        note: selectedDate.note ?? "",
                         dailyLog: selectedDate,
                         showEditDay: $showEditDay
                     )
@@ -41,8 +44,60 @@ struct MonthlyCalendarView: View {
             .padding(.horizontal)
             .onTapGesture {
                selectedDate = nil
-           }
+            }
         }
+        .onAppear {
+            fetchDailyLogs()
+        }
+        .onChange(of: dateHolder.date) { oldDate, newDate in
+            fetchDailyLogs()
+        }
+    }
+    
+    private func fetchDailyLogs() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("No authenticated user")
+            return
+        }
+        
+        // Get the start and end of the month
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month], from: dateHolder.date)
+        guard let startOfMonth = calendar.date(from: components),
+              let endOfMonth = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: startOfMonth) else {
+            return
+        }
+        
+        // Create end of day by setting time to 23:59:59
+        guard let endOfLastDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endOfMonth) else {
+            return
+        }
+        
+        print("Fetching logs between \(startOfMonth) and \(endOfLastDay)")
+        
+        db.collection("users").document(userId).collection("dailyLogs")
+            .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfMonth))
+            .whereField("date", isLessThanOrEqualTo: Timestamp(date: endOfLastDay))
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error fetching daily logs: \(error)")
+                    return
+                }
+                
+                print("Found \(snapshot?.documents.count ?? 0) documents")
+                
+                self.dailyLogs = snapshot?.documents.compactMap { document in
+                    if let log = try? document.data(as: DailyLog.self) {
+                        print("Successfully parsed log for date: \(log.date.dateValue()), progress: \(log.totalProgress)")
+                        return log
+                    } else {
+                        print("Failed to parse document: \(document.data())")
+                        return nil
+                    }
+                } ?? []
+                
+                print("Final parsed logs count: \(self.dailyLogs.count)")
+            }
     }
     
     var dayOfWeekStack: some View {
@@ -65,9 +120,6 @@ struct MonthlyCalendarView: View {
             let startingSpaces = CalendarHelper().weekDay(firstDayofMonth)
             let prevMonth = CalendarHelper().minusMonth(dateHolder.date)
             let daysInPrevMonth = CalendarHelper().daysInMonth(prevMonth)
-
-            // Get today's date for comparison
-            let today = Calendar.current.startOfDay(for: Date())
             
             ForEach(0..<6) { row in
                 HStack(spacing: 1) {
@@ -80,10 +132,8 @@ struct MonthlyCalendarView: View {
                         let day = isWithinCurrentMonth ? currentDay : nil
                         let date = dateForDay(currentDay: day, in: dateHolder.date)
 
-                        // Filter out logs for today's date
                         let logForDay = dailyLogs.first {
-                            Calendar.current.isDate($0.date.dateValue(), inSameDayAs: date) &&
-                            !Calendar.current.isDate($0.date.dateValue(), inSameDayAs: today) // Exclude today's log
+                            Calendar.current.isDate($0.date.dateValue(), inSameDayAs: date)
                         }
 
                         CalendarCell(
@@ -102,18 +152,11 @@ struct MonthlyCalendarView: View {
     }
 
     func dateForDay(currentDay: Int?, in date: Date) -> Date {
-        guard let day = currentDay else {
-            return date
-        }
+        guard let day = currentDay else { return date }
         var components = Calendar.current.dateComponents([.year, .month], from: date)
         components.day = day
         return Calendar.current.date(from: components)!
     }
-}
-
-#Preview {
-    MonthlyCalendarView()
-        .environmentObject(DateHolder())
 }
 
 extension Text {
@@ -123,4 +166,9 @@ extension Text {
             .padding(.vertical)
             .lineLimit(1)
     }
+}
+
+#Preview {
+    MonthlyCalendarView()
+        .environmentObject(DateHolder())
 }

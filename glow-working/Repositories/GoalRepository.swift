@@ -1,19 +1,31 @@
 import FirebaseFirestore
 import FirebaseCore
+import FirebaseAuth
 
 class GoalRepository: ObservableObject {
     @Published var goals: [Goal] = []
-    
-    // Change access level from private to internal
     private let db = Firestore.firestore()
     
-    // Fetch goals for a given date as Timestamp
+    private func getCurrentUserId() -> String? {
+        return Auth.auth().currentUser?.uid
+    }
+    
+    private func getUserGoalsCollection() -> CollectionReference? {
+        guard let userId = getCurrentUserId() else { return nil }
+        return db.collection("users").document(userId).collection("goals")
+    }
+    
     func fetchGoals(for date: Date) {
+        guard let goalsCollection = getUserGoalsCollection() else {
+            self.goals = []
+            return
+        }
+        
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
-        db.collection("goals")
+        goalsCollection
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
             .whereField("date", isLessThan: Timestamp(date: endOfDay))
             .whereField("deleted", isEqualTo: false)
@@ -28,10 +40,13 @@ class GoalRepository: ObservableObject {
             }
     }
     
-    // Add a new goal
     func addGoal(_ goal: Goal) {
+        guard let goalsCollection = getUserGoalsCollection() else {
+            return
+        }
+        
         do {
-            let _ = try db.collection("goals").addDocument(from: goal) { error in
+            let _ = try goalsCollection.addDocument(from: goal) { error in
                 if let error = error {
                     print("Error adding goal: \(error)")
                 } else {
@@ -44,12 +59,12 @@ class GoalRepository: ObservableObject {
         }
     }
     
-    // Update an existing goal
     func updateGoal(_ updatedGoal: Goal) {
-        guard let id = updatedGoal.id else { return }
+        guard let goalsCollection = getUserGoalsCollection(),
+              let id = updatedGoal.id else { return }
         
         do {
-            try db.collection("goals").document(id).setData(from: updatedGoal) { error in
+            try goalsCollection.document(id).setData(from: updatedGoal) { error in
                 if let error = error {
                     print("Error updating goal: \(error)")
                 } else {
@@ -63,59 +78,56 @@ class GoalRepository: ObservableObject {
     }
     
     func createDailyGoals(completion: @escaping () -> Void) {
-        // Get the current date
+        guard let goalsCollection = getUserGoalsCollection() else {
+            completion()
+            return
+        }
+        
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        
-        // Get the start and end of today
         let todayStart = today
         let todayEnd = calendar.date(byAdding: .day, value: 1, to: today)!
-
-        // Query Firestore for goals from today
-        db.collection("goals")
+        
+        goalsCollection
             .whereField("date", isGreaterThan: Timestamp(date: todayStart))
             .whereField("date", isLessThan: Timestamp(date: todayEnd))
             .whereField("deleted", isEqualTo: false)
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("Error fetching today's goals: \(error)")
-                    completion() // Call completion in case of error
+                    completion()
                     return
                 }
                 
-                // Check if there are existing goals for today
                 if let documents = snapshot?.documents, !documents.isEmpty {
                     print("Goals already exist for today. Skipping creation.")
-                    completion() // Call completion if goals already exist
+                    completion()
                     return
                 }
                 
-                // If no goals exist for today, proceed to create new goals
-                // Fetch goals from the previous day
                 let previousStart = calendar.date(byAdding: .day, value: -1, to: today)!
                 let previousEnd = calendar.date(byAdding: .day, value: 0, to: today)!
-
-                // Query Firestore for goals from the previous day
-                self.db.collection("goals")
+                
+                goalsCollection
                     .whereField("date", isGreaterThan: Timestamp(date: previousStart))
                     .whereField("date", isLessThan: Timestamp(date: previousEnd))
                     .whereField("deleted", isEqualTo: false)
                     .getDocuments { snapshot, error in
                         if let error = error {
                             print("Error fetching goals: \(error)")
-                            completion() // Call completion in case of error
+                            completion()
                             return
                         }
                         
                         guard let documents = snapshot?.documents else {
-                            completion() // Call completion if no documents found
+                            completion()
                             return
                         }
                         
                         for document in documents {
                             let goalData = document.data()
                             let newGoal = Goal(
-                                id: nil, // Firestore will generate this
+                                id: nil,
                                 date: Timestamp(date: Date()),
                                 deleted: false,
                                 detail: goalData["detail"] as? String ?? "",
@@ -126,14 +138,13 @@ class GoalRepository: ObservableObject {
                                 unit: goalData["unit"] as? String ?? ""
                             )
                             
-                            // Save the new goal to Firestore
-                            self.db.collection("goals").addDocument(data: [
+                            goalsCollection.addDocument(data: [
                                 "date": newGoal.date,
                                 "deleted": newGoal.deleted,
                                 "detail": newGoal.detail!,
                                 "icon": newGoal.icon,
                                 "name": newGoal.name,
-                                "quantityComplete": newGoal.quantityComplete,
+                                "quantityComplete": 0.0,
                                 "quantityGoal": newGoal.quantityGoal,
                                 "unit": newGoal.unit
                             ]) { error in
@@ -144,9 +155,8 @@ class GoalRepository: ObservableObject {
                                 }
                             }
                         }
-                        completion() // Call completion after processing all documents
+                        completion()
                     }
             }
     }
-
 }

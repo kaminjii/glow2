@@ -3,6 +3,7 @@ import SwiftUI
 struct AppTextField: View {
     var icon: String
     var placeholder: String
+    var isSecure: Bool = false
     @Binding var label: String
     
     @FocusState private var isFocused: Bool
@@ -20,11 +21,19 @@ struct AppTextField: View {
                         .foregroundStyle(.gray1)
                 }
                 
-                TextField("", text: $label)
-                    .autocorrectionDisabled()
-                    .font(.body)
-                    .foregroundStyle(.black1)
-                    .frame(maxWidth: .infinity)
+                if isSecure {
+                    SecureField("", text: $label)
+                        .autocorrectionDisabled()
+                        .font(.body)
+                        .foregroundStyle(.black1)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    TextField("", text: $label)
+                        .autocorrectionDisabled()
+                        .font(.body)
+                        .foregroundStyle(.black1)
+                        .frame(maxWidth: .infinity)
+                }
             }
                 
         }
@@ -37,3 +46,4 @@ struct AppTextField: View {
 #Preview {
     AppTextField(icon: "envelope.fill", placeholder: "Email", label: .constant(""))
 }
+
