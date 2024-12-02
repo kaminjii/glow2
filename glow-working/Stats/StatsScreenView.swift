@@ -8,14 +8,6 @@ struct StatsScreenView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            
-            Text("Statistics")
-                .font(.title3).bold()
-                .frame(maxWidth: .infinity)
-                .foregroundStyle(.black1)
-                .padding(.top)
-                .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
-
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Monthly Overview

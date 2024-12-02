@@ -33,6 +33,7 @@ struct HomeScreenView: View {
                         VStack(spacing: 10) {
                             welcomeSection
                             starSection
+                                .padding(.vertical)
                             progressSection
                             goalsList
                         }
@@ -76,7 +77,6 @@ struct HomeScreenView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .font(.largeTitle).bold()
             .padding(.horizontal, 30)
-            .padding(.top, 60)
             .foregroundStyle(.white)
     }
     

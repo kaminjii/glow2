@@ -15,12 +15,25 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		336933092CC8196E00F2A229 /* glow-working.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "glow-working.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		336933092CC8196E00F2A229 /* Glow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Glow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		33FAE7472CFE2527008A20C6 /* Exceptions for "glow-working" folder in "glow-working" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 336933082CC8196E00F2A229 /* glow-working */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3369330B2CC8196E00F2A229 /* glow-working */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				33FAE7472CFE2527008A20C6 /* Exceptions for "glow-working" folder in "glow-working" target */,
+			);
 			path = "glow-working";
 			sourceTree = "<group>";
 		};
@@ -54,7 +67,7 @@
 		3369330A2CC8196E00F2A229 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				336933092CC8196E00F2A229 /* glow-working.app */,
+				336933092CC8196E00F2A229 /* Glow.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -93,7 +106,7 @@
 				33FBC3822CCA4AF500D5F450 /* SymbolPicker */,
 			);
 			productName = "glow-working";
-			productReference = 336933092CC8196E00F2A229 /* glow-working.app */;
+			productReference = 336933092CC8196E00F2A229 /* Glow.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -286,6 +299,7 @@
 				DEVELOPMENT_TEAM = S2XR4HZLDH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "glow-working/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -297,7 +311,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubiq.glow-workin";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Glow;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -316,6 +330,7 @@
 				DEVELOPMENT_TEAM = S2XR4HZLDH;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "glow-working/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -327,7 +342,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "ubiq.glow-workin";
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = Glow;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
