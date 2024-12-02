@@ -12,7 +12,7 @@ struct DayCard: View {
         VStack(spacing: 0) {
             HStack(spacing: 16) {
                 // Star and date section
-                VStack(spacing: 8) {
+                VStack(spacing: 4) {
                     Image(starImage(for: progress))
                         .resizable()
                         .scaledToFit()
@@ -32,7 +32,7 @@ struct DayCard: View {
                     .padding(.vertical, 12)
                 
                 // Content section
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading) {
                     HStack {
                         Text("\(Int(progress * 100))% Complete")
                             .font(.headline)
@@ -55,7 +55,7 @@ struct DayCard: View {
                         Text(note)
                             .font(.subheadline)
                             .foregroundStyle(.gray1)
-                            .lineLimit(2)
+                            .lineLimit(1)
                             .multilineTextAlignment(.leading)
                     }
                 }
@@ -64,6 +64,7 @@ struct DayCard: View {
             .padding(16)
         }
         .frame(maxWidth: .infinity)
+        .frame(height: 100)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.white)

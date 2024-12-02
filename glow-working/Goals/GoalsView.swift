@@ -2,12 +2,48 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+struct GoalCard: View {
+    let goal: Goal
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        HStack {
+            GradientIcon(iconName: goal.icon)
+            
+            VStack(alignment: .leading, spacing: 0) {
+                Text(goal.name)
+                    .font(.headline)
+                    .foregroundStyle(.black1)
+                Text(goal.detail ?? "")
+                    .font(.subheadline)
+                    .foregroundColor(.gray1)
+            }
+            .padding(.horizontal, 10)
+            
+            Spacer()
+            
+            Menu {
+                Button("Edit", action: onEdit)
+                Button("Delete", role: .destructive, action: onDelete)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundStyle(.gray1)
+            }
+            .frame(height: 50)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .blackShadow, radius: 10, y: 5)
+    }
+}
+
 struct GoalsView: View {
     @Binding var selectedTab: Int
     @StateObject private var goalRepository = GoalRepository()
     @State private var goals: [Goal] = []
     @State private var selectedGoal: Goal? = nil
-    @State private var showActionSheet = false
     @State private var showDeleteAlert = false
     @State private var showAddGoal = false
     @State private var showEditGoal = false
@@ -38,19 +74,27 @@ struct GoalsView: View {
                     .background(Color.whitePrimary)
                     
                     if goals.isEmpty {
-                       emptyStateView
-                   } else {
-                       ScrollView {
-                           GoalsList(
-                               goals: $goals,
-                               onGoalSelected: { goal in
-                                   selectedGoal = goal
-                                   showActionSheet = true
-                               },
-                               showValue: false
-                           )
-                       }
-                   }
+                        emptyStateView
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 16) {
+                                ForEach(goals) { goal in
+                                    GoalCard(
+                                        goal: goal,
+                                        onEdit: {
+                                            selectedGoal = goal
+                                            showEditGoal = true
+                                        },
+                                        onDelete: {
+                                            selectedGoal = goal
+                                            showDeleteAlert = true
+                                        }
+                                    )
+                                }
+                            }
+                            .padding()
+                        }
+                    }
                 }
             }
         }
@@ -63,15 +107,6 @@ struct GoalsView: View {
                 ManageGoalView(isEditing: true, goal: goal)
                     .onDisappear { fetchGoalsForToday() }
             }
-        }
-        .confirmationDialog("Goal Options", isPresented: $showActionSheet, titleVisibility: .hidden) {
-            Button("Edit Goal") {
-                showEditGoal = true
-            }
-            Button("Delete Goal", role: .destructive) {
-                showDeleteAlert = true
-            }
-            Button("Cancel", role: .cancel) {}
         }
         .alert("Delete Goal", isPresented: $showDeleteAlert) {
             Button("Cancel", role: .cancel) {}
@@ -151,55 +186,6 @@ struct GoalsView: View {
             }
     }
 }
-
-struct GoalCard: View {
-    let goal: Goal
-    let onTap: () -> Void
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 16) {
-                Circle()
-                    .fill(Color.yellow.opacity(0.2))
-                    .frame(width: 50, height: 50)
-                    .overlay(
-                        Image(systemName: goal.icon)
-                            .foregroundStyle(.black1)
-                    )
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(goal.name)
-                        .font(.headline)
-                        .foregroundStyle(.black1)
-                    
-                    if let detail = goal.detail {
-                        Text(detail)
-                            .font(.subheadline)
-                            .foregroundStyle(.gray1)
-                    }
-                    
-                    Text("\(Int((goal.quantityComplete / goal.quantityGoal) * 100))% Complete")
-                        .font(.caption)
-                        .foregroundStyle(.gray1)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.gray3)
-            }
-            .padding()
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: .blackShadow, radius: 10, y: 5)
-        }
-    }
-}
-
-#Preview {
-    GoalsView(selectedTab: .constant(3))
-}
-
 
 #Preview {
     GoalsView(selectedTab: .constant(3))

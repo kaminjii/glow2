@@ -33,7 +33,6 @@ struct EditExistingDayView: View {
                             photoSection
                             Spacer(minLength: 40)
                         }
-                        .padding()
                     }
                 } else {
                     ProgressView("Loading...")
@@ -109,6 +108,7 @@ struct EditExistingDayView: View {
                 .fill(Color.white)
                 .shadow(color: .blackShadow, radius: 10, y: 5)
         )
+        .padding()
     }
     
     private var goalsList: some View {
@@ -116,6 +116,7 @@ struct EditExistingDayView: View {
             Text("Goals")
                 .font(.headline)
                 .foregroundStyle(.black1)
+                .padding(.horizontal)
             
             GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
                 self.selectedGoal = selectedGoal
@@ -137,6 +138,7 @@ struct EditExistingDayView: View {
                         .shadow(color: .blackShadow, radius: 10, y: 5)
                 )
         }
+        .padding()
     }
     
     private var photoSection: some View {
@@ -163,6 +165,8 @@ struct EditExistingDayView: View {
                     .padding(.top, 4)
             }
         }
+        .padding()
+
     }
     
     // MARK: - Helper Functions

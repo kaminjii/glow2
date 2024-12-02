@@ -23,7 +23,7 @@ struct DailyListView: View {
                     .environmentObject(dateHolder)
                     .padding(.horizontal)
                 
-                List {
+                VStack {
                     if filteredLogs.isEmpty {
                         // Show message if there are no logs for the month
                         Text("No entries for this month")
@@ -31,23 +31,28 @@ struct DailyListView: View {
                             .foregroundColor(.gray)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .center)
+                            .listRowBackground(Color.whitePrimary)
+                        
+                        Spacer()
                     } else {
-                        ForEach(filteredLogs) { log in
-                            Section {
-                                DayCard(
-                                    date: log.date.dateValue(),
-                                    progress: log.totalProgress,
-                                    note: log.note ?? "No notes",
-                                    dailyLog: log,
-                                    showEditDay: $showEditLog
-                                )
-                                .padding(.bottom, 0)
-                                .listRowSeparator(.hidden)
-                                .listRowSpacing(0)
-                                .listRowBackground(Color.whitePrimary)
-                                .onTapGesture {
-                                    logToEdit = log
-                                    showEditLog = true
+                        List {
+                            ForEach(filteredLogs) { log in
+                                Section {
+                                    DayCard(
+                                        date: log.date.dateValue(),
+                                        progress: log.totalProgress,
+                                        note: log.note ?? "No notes",
+                                        dailyLog: log,
+                                        showEditDay: $showEditLog
+                                    )
+                                    .padding(.bottom, 0)
+                                    .listRowSeparator(.hidden)
+                                    .listRowSpacing(0)
+                                    .listRowBackground(Color.whitePrimary)
+                                    .onTapGesture {
+                                        logToEdit = log
+                                        showEditLog = true
+                                    }
                                 }
                             }
                         }

@@ -157,6 +157,7 @@ struct LoginUserView: View {
                                 )
                                 .opacity(animate ? 1 : 0)
                                 .offset(y: animate ? 0 : 20)
+                                .padding(.horizontal)
                             }
                         }
                         

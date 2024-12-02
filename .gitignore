@@ -8,7 +8,8 @@ xcuserdata/
 # Ignore user-specific Xcode data
 *.xcuserstate
 *.xcuserdata/
-
+glow-working.xcodeproj/project.xcworkspace/xcuserdata/
+glow-working.xcodeproj/project.xcworkspace/xcuserdata/*.xcuserstate
 
 ## Obj-C/Swift specific
 *.hmap
