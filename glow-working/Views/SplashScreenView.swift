@@ -24,11 +24,18 @@ struct SplashScreenView: View {
             Group {
                 switch authViewModel.authenticationState {
                 case .authenticated:
-                    ContentView()
+                    if authViewModel.hasCompletedOnboarding {
+                        ContentView()
+                            .environmentObject(authViewModel)
+                    } else {
+                        SelectTemplateGoalsView()
+                            .environmentObject(authViewModel)
+                    }
                 case .authenticating:
                     ProgressView()
                 case .unauthenticated:
-                    GetStartedView()
+                    LoginUserView()
+                        .environmentObject(authViewModel)
                 }
             }
         }

@@ -3,7 +3,6 @@ import FirebaseFirestore
 
 struct EditExistingDayView: View {
     @Environment(\.presentationMode) var presentationMode
-
     @StateObject private var dailyLogRepository = DailyLogRepository()
     @StateObject private var goalRepository = GoalRepository()
     private let db = Firestore.firestore()
@@ -18,25 +17,50 @@ struct EditExistingDayView: View {
     @State private var progress: Double = 0
     
     let date: Date
-    
     var onSave: (DailyLog) -> Void
 
     var body: some View {
-        ZStack {
-            Color.whitePrimary.edgesIgnoringSafeArea(.all)
-            VStack {
-                headerView
+        NavigationStack {
+            ZStack {
+                Color.whitePrimary.ignoresSafeArea()
+                
                 if dailyLog != nil {
-                    progressSection
-                    contentScrollView
-                    saveButton
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            progressCard
+                            goalsList
+                            noteSection
+                            photoSection
+                            Spacer(minLength: 40)
+                        }
                         .padding()
+                    }
                 } else {
                     ProgressView("Loading...")
                         .onAppear {
                             fetchDailyLog(for: date)
                             goalRepository.fetchGoals(for: date)
                         }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .fontWeight(.semibold)
+                }
+                ToolbarItem(placement: .principal) {
+                    if let dailyLog = dailyLog {
+                        Text(formattedDate(for: dailyLog.date.dateValue()))
+                            .font(.headline)
+                    }
                 }
             }
         }
@@ -54,75 +78,95 @@ struct EditExistingDayView: View {
             self.goals = fetchedGoals
         }
     }
-
-    // MARK: - Header View
-    private var headerView: some View {
-        ZStack {
-            HStack {
-                backButton
-                Spacer()
+    
+    private var progressCard: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Overall Progress")
+                    .font(.headline)
+                    .foregroundStyle(.black1)
+                
+                HStack {
+                    ProgressBar(progress: progress)
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(.body, design: .rounded))
+                        .fontWeight(.medium)
+                        .foregroundStyle(.gray1)
+                        .frame(width: 50)
+                }
             }
-            if let dailyLog = dailyLog {
-                Text(formattedDate(for: dailyLog.date.dateValue())).bold()
-            }
+            
+            Divider()
+            
+            Text("Complete your daily goals to increase your overall progress")
+                .font(.subheadline)
+                .foregroundStyle(.gray1)
+                .multilineTextAlignment(.center)
         }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
+        )
     }
-
-    private var backButton: some View {
-        Button(action: { presentationMode.wrappedValue.dismiss() }) {
-            HStack {
-                Image(systemName: "chevron.left")
-                Text("Back").fontWeight(.medium)
-            }
-            .padding()
+    
+    private var goalsList: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Goals")
+                .font(.headline)
+                .foregroundStyle(.black1)
+            
+            GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
+                self.selectedGoal = selectedGoal
+            }, showValue: true)
         }
     }
     
-    private var progressSection: some View {
-        HStack {
-            ProgressBar(progress: progress)
-            Text("\(Int(progress * 100))%")
-                .font(.body)
-                .foregroundStyle(.gray1)
-                .frame(width: 50)
+    private var noteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Notes")
+                .font(.headline)
+                .foregroundStyle(.black1)
+            
+            NoteTextEditor(note: $note, originalNote: $originalNote)
+                .frame(minHeight: 120)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white)
+                        .shadow(color: .blackShadow, radius: 10, y: 5)
+                )
         }
-        .padding(.horizontal)
     }
-
-    // MARK: - Content ScrollView
-    private var contentScrollView: some View {
-        ScrollView {
-            VStack {
-                GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
-                    self.selectedGoal = selectedGoal
-                }, showValue: true)
-                noteTextEditor
-                    .padding()
-                imagePicker
-                    .padding()
-                Spacer()
+    
+    private var photoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Photo")
+                .font(.headline)
+                .foregroundStyle(.black1)
+            
+            ImagePicker(
+                selectedImage: $selectedImage,
+                isPickerPresented: $isPickerPresented
+            )
+            .frame(minHeight: 220)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+                    .shadow(color: .blackShadow, radius: 10, y: 5)
+            )
+            
+            if selectedImage == nil {
+                Text("Add a photo to track your progress")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray1)
+                    .padding(.top, 4)
             }
-            .padding(.vertical)
-            .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
         }
     }
-
-    // MARK: - Note Text Editor
-    private var noteTextEditor: some View {
-        NoteTextEditor(note: $note, originalNote: $originalNote)
-    }
-
-    // MARK: - Image Picker
-    private var imagePicker: some View {
-        ImagePicker(selectedImage: $selectedImage, isPickerPresented: $isPickerPresented)
-    }
-
-    // MARK: - Save Button
-    private var saveButton: some View {
-        GradientButton(title: "Save", action: saveChanges, isEnabled: true)
-    }
-
-    // MARK: - Functions
+    
+    // MARK: - Helper Functions
+    
     private func formattedDate(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
@@ -150,7 +194,6 @@ struct EditExistingDayView: View {
             }
         }
 
-        // Update each goal to ensure persistence of changes
         for goal in goalRepository.goals {
             updateGoal(goal)
         }
@@ -165,10 +208,9 @@ struct EditExistingDayView: View {
         dailyLogRepository.fetchDailyLogs(for: date) { logs in
             if let log = logs.first {
                 self.dailyLog = log
-                self.note = log.note!
-                self.originalNote = log.note!
+                self.note = log.note ?? ""
+                self.originalNote = log.note ?? ""
                 self.progress = log.totalProgress
-                
             } else {
                 print("No daily log found for the date.")
             }
@@ -177,7 +219,7 @@ struct EditExistingDayView: View {
 }
 
 #Preview {
-    EditExistingDayView(date: Date(), onSave: { _ in })
+    EditExistingDayView(date: Date()) { _ in }
         .environmentObject(DailyLogRepository())
         .environmentObject(GoalRepository())
 }

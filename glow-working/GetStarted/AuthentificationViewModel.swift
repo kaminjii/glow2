@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseAuth
+import FirebaseFirestore
 
 enum AuthenticationState {
     case unauthenticated
@@ -33,6 +34,8 @@ class AuthenticationViewModel: ObservableObject {
     @Published var user: User?
     @Published var errorMessage: String = ""
     @Published var displayName: String = ""
+    @Published var hasCompletedOnboarding: Bool = false
+
     
     init() {
         registerAuthStateHandler()
@@ -48,15 +51,53 @@ class AuthenticationViewModel: ObservableObject {
     }
     
     func registerAuthStateHandler() {
-        Auth.auth().addStateDidChangeListener { [weak self] auth, user in
-            guard let self = self else { return }
-            DispatchQueue.main.async {
-                self.user = user
-                self.authenticationState = user == nil ? .unauthenticated : .authenticated
-                self.displayName = user?.displayName ?? ""
-            }
-        }
-    }
+           Auth.auth().addStateDidChangeListener { [weak self] auth, user in
+               guard let self = self else { return }
+               Task {
+                   if let user = user {
+                       // Check onboarding status when user signs in
+                       let db = Firestore.firestore()
+                       do {
+                           let document = try await db.collection("users").document(user.uid).getDocument()
+                           let hasCompletedOnboarding = document.data()?["hasCompletedOnboarding"] as? Bool ?? false
+                           
+                           DispatchQueue.main.async {
+                               self.user = user
+                               self.hasCompletedOnboarding = hasCompletedOnboarding
+                               self.authenticationState = .authenticated
+                               self.displayName = user.displayName ?? ""
+                           }
+                       } catch {
+                           print("Error fetching user data: \(error)")
+                           DispatchQueue.main.async {
+                               self.authenticationState = .unauthenticated
+                           }
+                       }
+                   } else {
+                       DispatchQueue.main.async {
+                           self.user = nil
+                           self.hasCompletedOnboarding = false
+                           self.authenticationState = .unauthenticated
+                       }
+                   }
+               }
+           }
+       }
+       
+       func completeOnboarding() async {
+           guard let userId = user?.uid else { return }
+           let db = Firestore.firestore()
+           do {
+               try await db.collection("users").document(userId).updateData([
+                   "hasCompletedOnboarding": true
+               ])
+               DispatchQueue.main.async {
+                   self.hasCompletedOnboarding = true
+               }
+           } catch {
+               print("Error updating onboarding status: \(error)")
+           }
+       }
     
     func switchFlow() {
         flow = flow == .login ? .signUp : .login

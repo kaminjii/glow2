@@ -6,30 +6,36 @@ struct DayCard: View {
     var progress: Double
     var note: String
     var dailyLog: DailyLog
-
     @Binding var showEditDay: Bool
-
+    
     var body: some View {
-        VStack {
-            HStack {
-                VStack(spacing: 4) {
+        VStack(spacing: 0) {
+            HStack(spacing: 16) {
+                // Star and date section
+                VStack(spacing: 8) {
                     Image(starImage(for: progress))
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 50, height: 50)
+                        .frame(width: 55, height: 55)
                     Text(formattedDate)
-                        .font(.caption)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                         .foregroundStyle(.black1)
                 }
+                .frame(width: 65)
                 
-                Divider()
-                    .background(Color.gray1)
-                    .frame(width: 10)
-                    .padding(.vertical)
+                // Vertical divider
+                Rectangle()
+                    .fill(Color.gray2)
+                    .frame(width: 1)
+                    .frame(maxHeight: .infinity)
+                    .padding(.vertical, 12)
                 
-                VStack(spacing: 0) {
+                // Content section
+                VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("\(Int(progress * 100))% Complete")
+                            .font(.headline)
                             .foregroundStyle(.black1)
                         
                         Spacer()
@@ -38,33 +44,33 @@ struct DayCard: View {
                             showEditDay = true
                         }) {
                             Image(systemName: "square.and.pencil")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 15)
+                                .imageScale(.medium)
                                 .foregroundStyle(.gray1)
+                                .frame(width: 32, height: 32)
+                                .contentShape(Rectangle())
                         }
                     }
                     
-                    Text("\(note)")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .foregroundStyle(.gray1)
-                        .font(.subheadline)
-                    
-                    Spacer()
+                    if !note.isEmpty {
+                        Text(note)
+                            .font(.subheadline)
+                            .foregroundStyle(.gray1)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                    }
                 }
-                .padding(.vertical, 10)
+                .padding(.trailing, 4)
             }
+            .padding(16)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 100)
-        .padding(.horizontal)
         .background(
-            RoundedRectangle(cornerRadius: 10)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color.white)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
         )
-        .shadow(color: .blackShadow, radius: 10, y: 5)
     }
-
+    
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"

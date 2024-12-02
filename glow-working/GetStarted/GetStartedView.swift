@@ -50,7 +50,7 @@ struct GetStartedView: View {
                 LoginUserView()
             }
             .navigationDestination(isPresented: $navigateToSignUp) {
-                RegisterNewUserView()
+                RegisterInfoView()
                     .environmentObject(authenticationViewModel)
             }
         }
