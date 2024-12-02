@@ -2,25 +2,44 @@ import SwiftUI
 
 struct TodaysProgressView: View {
     @StateObject private var viewModel = TodaysProgressViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) var dismiss
     @Binding var note: String
+    @State private var contentHeight: CGFloat = 0
     
     var body: some View {
-        ZStack {
-            Color.whitePrimary
-                .ignoresSafeArea()
-            
-            VStack(spacing: 30) {
-                headerView
-                progressSection
-                noteTextEditor
-                imagePicker
-                saveButton
-                    .padding(.bottom, 40)
+        NavigationStack {
+            ZStack {
+                Color.whitePrimary.ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        progressCard
+                        noteSection
+                        photoSection
+                        Spacer(minLength: 40) // Add bottom spacing
+                    }
+                    .padding()
+                }
             }
-            .padding(.horizontal)
-            .navigationTitle("Today's Progress")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        viewModel.saveProgress()
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("Today's Progress")
+                        .font(.headline)
+                }
+            }
             .sheet(isPresented: $viewModel.isPickerPresented) {
                 PhotoPicker(selectedImage: $viewModel.selectedImage)
             }
@@ -30,53 +49,81 @@ struct TodaysProgressView: View {
         }
     }
     
-    private var headerView: some View {
-        ZStack {
-            Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
+    private var progressCard: some View {
+        VStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Overall Progress")
+                    .font(.headline)
+                    .foregroundStyle(.black1)
+                
                 HStack {
-                    Image(systemName: "chevron.left")
-                    Text("Back")
+                    ProgressBar(progress: viewModel.progress)
+                    Text("\(Int(viewModel.progress * 100))%")
+                        .font(.system(.body, design: .rounded))
                         .fontWeight(.medium)
+                        .foregroundStyle(.gray1)
+                        .frame(width: 50)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             
-            Spacer()
-            Text("Today's Progress")
-                .bold()
-        }
-    }
-    
-    private var progressSection: some View {
-        HStack {
-            ProgressBar(progress: viewModel.progress)
-            Text("\(Int(viewModel.progress * 100))%")
-                .font(.body)
+            Divider()
+            
+            Text("Complete your daily goals to increase your overall progress")
+                .font(.subheadline)
                 .foregroundStyle(.gray1)
-                .frame(width: 50)
+                .multilineTextAlignment(.center)
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
+        )
+    }
+    
+    private var noteSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Notes")
+                .font(.headline)
+                .foregroundStyle(.black1)
+            
+            NoteTextEditor(note: $note, originalNote: $viewModel.note)
+                .frame(minHeight: 120)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.white)
+                        .shadow(color: .blackShadow, radius: 10, y: 5)
+                )
         }
     }
     
-    private var noteTextEditor: some View {
-        NoteTextEditor(note: $note, originalNote: $viewModel.note)
-    }
-
-    
-    private var imagePicker: some View {
-        ImagePicker(selectedImage: $viewModel.selectedImage, isPickerPresented: $viewModel.isPickerPresented)
-    }
-
-    
-    private var saveButton: some View {
-        GradientButton(title: "Save", action: {
-            viewModel.saveProgress()
-            presentationMode.wrappedValue.dismiss()
-        }, isEnabled: true)
+    private var photoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Photo")
+                .font(.headline)
+                .foregroundStyle(.black1)
+            
+            ImagePicker(
+                selectedImage: $viewModel.selectedImage,
+                isPickerPresented: $viewModel.isPickerPresented
+            )
+            .frame(minHeight: 220)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+                    .shadow(color: .blackShadow, radius: 10, y: 5)
+            )
+            
+            if viewModel.selectedImage == nil {
+                Text("Add a photo to track your progress")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray1)
+                    .padding(.top, 4)
+            }
+        }
     }
 }
 
 #Preview {
-    TodaysProgressView(note: .constant("gelloo"))
+    TodaysProgressView(note: .constant("Sample note for preview"))
 }

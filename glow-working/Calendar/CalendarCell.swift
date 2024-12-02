@@ -57,19 +57,23 @@ struct CalendarCell: View {
     }
 
     func monthStruct() -> (Month, Date) {
-        let start = startingSpaces == 0 ? startingSpaces + 7 : startingSpaces
-        
         let dayInt: Int
         let monthType: MonthType
         
-        if count <= start {
-            dayInt = daysInPrevMonth + count - start
+        // Calculate position in the month
+        let position = count - startingSpaces
+        
+        if position <= 0 {
+            // Previous month
+            dayInt = daysInPrevMonth + position
             monthType = .Previous
-        } else if count - start > daysInMonth {
-            dayInt = count - start - daysInMonth
+        } else if position > daysInMonth {
+            // Next month
+            dayInt = position - daysInMonth
             monthType = .Next
         } else {
-            dayInt = count - start
+            // Current month
+            dayInt = position
             monthType = .Current
         }
         

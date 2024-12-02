@@ -14,36 +14,52 @@ struct MonthlyCalendarView: View {
         ZStack {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
 
-            VStack(spacing: 1) {
+            VStack(spacing: 0) {
+                // Calendar Header
                 DateScrollView()
                     .environmentObject(dateHolder)
+                    .padding(.horizontal)
+                    .padding(.vertical, 16)
                 
-                dayOfWeekStack
-                
-                calendarGrid
-                    .padding(.bottom)
-                
-                if let selectedDate = selectedDate {
-                    DayCard(
-                        date: selectedDate.date.dateValue(),
-                        progress: selectedDate.totalProgress,
-                        note: selectedDate.note ?? "",
-                        dailyLog: selectedDate,
-                        showEditDay: $showEditDay
-                    )
-                    .transition(.slide)
-                    .fullScreenCover(isPresented: $showEditDay) {
-                        EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
-                            self.selectedDate = updatedLog
-                        })
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 20) {
+                        // Days of Week Header
+                        dayOfWeekStack
+                            .padding(.top, 8)
+                        
+                        // Calendar Grid
+                        calendarGrid
+                            .padding(.horizontal, 8)
+                            .padding(.bottom)
+                        
+                        // Selected Date Card
+                        if let selectedDate = selectedDate {
+                            DayCard(
+                                date: selectedDate.date.dateValue(),
+                                progress: selectedDate.totalProgress,
+                                note: selectedDate.note ?? "",
+                                dailyLog: selectedDate,
+                                showEditDay: $showEditDay
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.horizontal)
+                            .fullScreenCover(isPresented: $showEditDay) {
+                                EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
+                                    self.selectedDate = updatedLog
+                                })
+                            }
+                        }
+                        
+                        Spacer(minLength: 20)
                     }
                 }
-                
-                Spacer()
+                .padding(.top)
             }
-            .padding(.horizontal)
+            .background(Color.whitePrimary.opacity(0.97))
             .onTapGesture {
-               selectedDate = nil
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    selectedDate = nil
+                }
             }
         }
         .onAppear {
@@ -51,6 +67,91 @@ struct MonthlyCalendarView: View {
         }
         .onChange(of: dateHolder.date) { oldDate, newDate in
             fetchDailyLogs()
+        }
+    }
+    
+    var dayOfWeekStack: some View {
+        HStack(spacing: 1) {
+            ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
+                Text(day)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.gray1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+        }
+        .padding(.horizontal, 8)
+    }
+    
+    var calendarGrid: some View {
+        let daysInMonth = CalendarHelper().daysInMonth(dateHolder.date)
+        let firstDayofMonth = CalendarHelper().firstDayOfMonth(dateHolder.date)
+        let startingSpaces = CalendarHelper().weekDay(firstDayofMonth)
+        let prevMonth = CalendarHelper().minusMonth(dateHolder.date)
+        let daysInPrevMonth = CalendarHelper().daysInMonth(prevMonth)
+        
+        return VStack(spacing: 2) {
+            ForEach(0..<6) { row in
+                HStack(spacing: 2) {
+                    ForEach(1..<8) { column in
+                        let count = column + row * 7
+                        let position = count - startingSpaces
+                        
+                        Group {
+                            if position <= 0 {
+                                createCalendarCell(
+                                    count: count,
+                                    day: daysInPrevMonth + position,
+                                    inMonth: prevMonth,
+                                    monthType: .Previous
+                                )
+                            } else if position > daysInMonth {
+                                createCalendarCell(
+                                    count: count,
+                                    day: position - daysInMonth,
+                                    inMonth: CalendarHelper().plusMonth(dateHolder.date),
+                                    monthType: .Next
+                                )
+                            } else {
+                                createCalendarCell(
+                                    count: count,
+                                    day: position,
+                                    inMonth: dateHolder.date,
+                                    monthType: .Current
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Keep existing helper functions unchanged
+    private func createCalendarCell(count: Int, day: Int, inMonth: Date, monthType: MonthType) -> some View {
+        let calendar = Calendar.current
+        var dateComponents = calendar.dateComponents([.year, .month], from: inMonth)
+        dateComponents.day = day
+        
+        let date = calendar.date(from: dateComponents)!
+        let startOfDay = calendar.startOfDay(for: date)
+        
+        let logForDay = dailyLogs.first { log in
+            let logDate = log.date.dateValue()
+            let logStartOfDay = calendar.startOfDay(for: logDate)
+            return logStartOfDay == startOfDay
+        }
+        
+        return CalendarCell(
+            count: count,
+            startingSpaces: CalendarHelper().weekDay(CalendarHelper().firstDayOfMonth(dateHolder.date)),
+            daysInMonth: CalendarHelper().daysInMonth(dateHolder.date),
+            daysInPrevMonth: CalendarHelper().daysInMonth(CalendarHelper().minusMonth(dateHolder.date)),
+            dailyLog: logForDay
+        ) { log in
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                selectedDate = log
+            }
         }
     }
     
@@ -99,60 +200,9 @@ struct MonthlyCalendarView: View {
                 print("Final parsed logs count: \(self.dailyLogs.count)")
             }
     }
-    
-    var dayOfWeekStack: some View {
-        HStack(spacing: 1) {
-            Text("Sun").dayOfWeek()
-            Text("Mon").dayOfWeek()
-            Text("Tue").dayOfWeek()
-            Text("Wed").dayOfWeek()
-            Text("Thu").dayOfWeek()
-            Text("Fri").dayOfWeek()
-            Text("Sat").dayOfWeek()
-        }
-        .padding(.top, 30)
-    }
-    
-    var calendarGrid: some View {
-        VStack(spacing: 1) {
-            let daysInMonth = CalendarHelper().daysInMonth(dateHolder.date)
-            let firstDayofMonth = CalendarHelper().firstDayOfMonth(dateHolder.date)
-            let startingSpaces = CalendarHelper().weekDay(firstDayofMonth)
-            let prevMonth = CalendarHelper().minusMonth(dateHolder.date)
-            let daysInPrevMonth = CalendarHelper().daysInMonth(prevMonth)
-            
-            ForEach(0..<6) { row in
-                HStack(spacing: 1) {
-                    ForEach(1..<8) { column in
-                        let count = column + row * 7
-                        
-                        let currentDay = count - startingSpaces
-                        let isWithinCurrentMonth = (currentDay > 0 && currentDay <= daysInMonth)
 
-                        let day = isWithinCurrentMonth ? currentDay : nil
-                        let date = dateForDay(currentDay: day, in: dateHolder.date)
 
-                        let logForDay = dailyLogs.first {
-                            Calendar.current.isDate($0.date.dateValue(), inSameDayAs: date)
-                        }
-
-                        CalendarCell(
-                            count: count,
-                            startingSpaces: startingSpaces,
-                            daysInMonth: daysInMonth,
-                            daysInPrevMonth: daysInPrevMonth,
-                            dailyLog: logForDay
-                        ) { log in
-                            selectedDate = log
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    func dateForDay(currentDay: Int?, in date: Date) -> Date {
-        guard let day = currentDay else { return date }
+    private func dateForDay(_ day: Int, in date: Date) -> Date {
         var components = Calendar.current.dateComponents([.year, .month], from: date)
         components.day = day
         return Calendar.current.date(from: components)!

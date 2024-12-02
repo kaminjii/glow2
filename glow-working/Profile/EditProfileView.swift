@@ -1,101 +1,204 @@
-//
-//  EditProfileView.swift
-//  glow-working
-//
-//  Created by Alfredo Ruiz on 10/24/24.
-//
-
 import SwiftUI
+import FirebaseAuth
 
 struct EditProfileView: View {
-    @Binding var navigationPath: NavigationPath
-    @State private var editType: EditType?
+    @ObservedObject var viewModel: ProfileViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var showChangePasswordSheet = false
+    @State private var showTwoFactorSheet = false
     
     var body: some View {
-        VStack {
-            Text("Edit Profile")
-                .font(.title)
-                .fontWeight(.semibold)
-                .padding(.top, 20)
-            
-            // Name edit option
-            HStack {
-                Image(systemName: "person.fill")
-                    .foregroundColor(.gray1)
-                Text("Kaitlin Wood")
-                    .foregroundColor(.gray1)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.black)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    profileImageSection
+                    
+                    inputFields
+                    
+                    Divider()
+                        .padding(.vertical)
+                    
+                    securitySection
+                }
+                .padding()
             }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            .onTapGesture {
-                editType = .name
-                navigationPath.append(editType!)
+            .background(Color.whitePrimary)
+            .navigationTitle("Edit Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        Task {
+                            await viewModel.updateProfile()
+                            dismiss()
+                        }
+                    }
+                    .bold()
+                }
             }
-            .padding(.horizontal)
-            
-            // Email edit option
-            HStack {
-                Image(systemName: "envelope.fill")
-                    .foregroundColor(.gray1)
-                Text("kaitlin@email.com")
-                    .foregroundColor(.gray1)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.black)
+            .sheet(isPresented: $showChangePasswordSheet) {
+                ChangePasswordView(viewModel: viewModel)
             }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            .onTapGesture {
-                editType = .email
-                navigationPath.append(editType!)
+            .sheet(isPresented: $showTwoFactorSheet) {
+                TwoFactorView()
             }
-            .padding(.horizontal)
-            
-            // Password edit option
-            HStack {
-                Image(systemName: "lock.fill")
-                    .foregroundColor(.gray1)
-                Text("Change Password")
-                    .foregroundColor(.gray1)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.black)
-            }
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-            .onTapGesture {
-                editType = .password
-                navigationPath.append(editType!)
-            }
-            .padding(.horizontal)
-            
-            Spacer()
-            
-            // Sign out button
-            Button(action: {
-                // Add sign-out logic
-            }) {
-                Text("Sign out")
-                    .fontWeight(.bold)
-                    .foregroundColor(.red)
-                    .padding()
-            }
-            .padding()
         }
-        .padding(.top)
-        .navigationDestination(for: EditType.self) { type in
-            UpdateInfoView(editType: type)
+    }
+    
+    private var profileImageSection: some View {
+        VStack(spacing: 16) {
+            Image(viewModel.starImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120)
+                .shadow(color: .blackShadow, radius: 10)
+            
+            Text(viewModel.userName)
+                .font(.title2).bold()
+        }
+    }
+    
+    private var inputFields: some View {
+        VStack(spacing: 20) {
+            InputField(
+                title: "Name",
+                text: $viewModel.userName,
+                icon: "person.fill"
+            )
+            
+            InputField(
+                title: "Email",
+                text: $viewModel.email,
+                icon: "envelope.fill"
+            )
+            .textInputAutocapitalization(.never)
+            .keyboardType(.emailAddress)
+        }
+    }
+    
+    private var securitySection: some View {
+        VStack(spacing: 16) {
+            Button(action: { showChangePasswordSheet = true }) {
+                SecurityButton(
+                    title: "Change Password",
+                    icon: "lock.fill"
+                )
+            }
+            
+            Button(action: { showTwoFactorSheet = true }) {
+                SecurityButton(
+                    title: "Two-Factor Authentication",
+                    icon: "shield.fill",
+                    subtitle: "Off"
+                )
+            }
         }
     }
 }
 
-#Preview {
-    EditProfileView(navigationPath: .constant(NavigationPath()))
+struct InputField: View {
+    let title: String
+    @Binding var text: String
+    let icon: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .foregroundStyle(.gray1)
+                .font(.subheadline)
+            
+            HStack {
+                Image(systemName: icon)
+                    .foregroundStyle(.gray1)
+                    .frame(width: 24)
+                
+                TextField(title, text: $text)
+                    .textFieldStyle(.plain)
+            }
+            .padding()
+            .background(Color.gray2)
+            .cornerRadius(12)
+        }
+    }
 }
 
+struct SecurityButton: View {
+    let title: String
+    let icon: String
+    var subtitle: String? = nil
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(.gray1)
+                .frame(width: 24)
+            
+            VStack(alignment: .leading) {
+                Text(title)
+                    .foregroundStyle(.black1)
+                if let subtitle = subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.gray1)
+                }
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.gray3)
+        }
+        .padding()
+        .background(Color.gray2)
+        .cornerRadius(12)
+    }
+}
+
+struct ChangePasswordView: View {
+    @ObservedObject var viewModel: ProfileViewModel
+    @Environment(\.dismiss) var dismiss
+    @State private var currentPassword = ""
+    @State private var newPassword = ""
+    @State private var confirmPassword = ""
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    SecureField("Current Password", text: $currentPassword)
+                    SecureField("New Password", text: $newPassword)
+                    SecureField("Confirm New Password", text: $confirmPassword)
+                }
+            }
+            .navigationTitle("Change Password")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        Task {
+                            await viewModel.updatePassword(currentPassword: currentPassword, newPassword: newPassword)
+                            dismiss()
+                        }
+                    }
+                    .disabled(newPassword != confirmPassword || newPassword.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+struct TwoFactorView: View {
+    var body: some View {
+        Text("Two Factor Authentication")
+    }
+}
+
+#Preview {
+    EditProfileView(viewModel: ProfileViewModel())
+}

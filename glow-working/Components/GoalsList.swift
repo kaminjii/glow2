@@ -12,7 +12,7 @@ struct GoalsList: View {
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
                 .shadow(color: .blackShadow, radius: 10, y: 5)
-                .padding(.bottom, 10)
+                .padding(.bottom, 5)
         }
         .padding(.horizontal)
         .frame(maxWidth: .infinity)

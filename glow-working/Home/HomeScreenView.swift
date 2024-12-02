@@ -13,6 +13,7 @@ struct HomeScreenView: View {
     @State private var goals: [Goal] = []
     @State private var userName: String = ""
     @StateObject private var viewModel = ViewModel()
+    @State private var starOffset: CGFloat = 0
     
     private let db = Firestore.firestore()
     
@@ -21,78 +22,81 @@ struct HomeScreenView: View {
             ZStack {
                 Color.whitePrimary.edgesIgnoringSafeArea(.all)
                 
-                VStack {
-                    homeScreenHeader
-                    goalListScrollView
-                        .edgesIgnoringSafeArea(.all)
-                    
+                VStack(spacing: 0) {
+                    headerGradient
                     Spacer()
-                    
                 }
-                .ignoresSafeArea(.all)
+                .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            welcomeSection
+                            starSection
+                            progressSection
+                            goalsList
+                        }
+                    }
+                }
                 .tabItem {
                     Image(systemName: "house.fill")
                 }
-                .fullScreenCover(isPresented: $showTodaysProgress) {
-                    TodaysProgressView(note: $note)
-                }
-                .sheet(item: $selectedGoal) { goal in
-                    EditGoalProgressView(goal: .constant(goal)) {
-                        fetchGoalsForToday()
-                    }
-                    .presentationDetents([.fraction(0.4), .large])
-                }
-                
-                .onAppear {
-                    viewModel.setupDailyLogAndGoals()
-                    fetchUserName()
+            }
+            .fullScreenCover(isPresented: $showTodaysProgress) {
+                TodaysProgressView(note: $note)
+            }
+            .sheet(item: $selectedGoal) { goal in
+                EditGoalProgressView(goal: .constant(goal)) {
                     fetchGoalsForToday()
                 }
+                .presentationDetents([.fraction(0.5), .large])
             }
-        }
-
-    }
-    
-    private var homeScreenHeader: some View {
-        ZStack {
-            LinearGradient(gradient: Gradient(colors: [backgroundColor, .whitePrimary]), startPoint: .top, endPoint: .bottom)
-                .frame(maxHeight: 450)
-                .ignoresSafeArea(.all)
-            
-            VStack(spacing: 0) {
-                Text("Hello \(userName)!")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .font(.largeTitle).bold()
-                    .padding(.horizontal, 30)
-                    .padding(.top, 100)
-                    .padding(.bottom, 16)
-                    .foregroundStyle(.white)
-                
-                Image(starImage)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 230, height: 230)
-                    .shadow(color: Color.black.opacity(0.20), radius: 5, y: 8)
-                
-                Button(action: {
-                    showTodaysProgress = true
-                }) {
-                    todaysProgress
-                        .padding()
+            .onAppear {
+                viewModel.setupDailyLogAndGoals()
+                fetchUserName()
+                fetchGoalsForToday()
+                withAnimation(.easeInOut(duration: 2).repeatForever()) {
+                    starOffset = -20
                 }
             }
         }
-        .ignoresSafeArea()
-        .frame(height: 450)
     }
     
-    private var todaysProgress: some View {
-        HStack(spacing: 0) {
+    private var headerGradient: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [backgroundColor, .whitePrimary]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(height: 500)
+    }
+    
+    private var welcomeSection: some View {
+        Text("Hello \(userName)!")
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .font(.largeTitle).bold()
+            .padding(.horizontal, 30)
+            .padding(.top, 60)
+            .foregroundStyle(.white)
+    }
+    
+    private var starSection: some View {
+        Image(starImage)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 280, height: 280)
+            .shadow(color: Color.black.opacity(0.20), radius: 5, y: 8)
+            .offset(y: starOffset)
+    }
+    
+    private var progressSection: some View {
+        Button(action: {
+            showTodaysProgress = true
+        }) {
             VStack(spacing: 0) {
                 HStack {
                     Text("Today's Progress")
-                        .frame(maxHeight: .infinity, alignment: .topLeading)
-                        .font(.title)
+                        .font(.title3.bold())
                         .foregroundStyle(.black1)
                     
                     Spacer()
@@ -100,31 +104,25 @@ struct HomeScreenView: View {
                     Text("\(Int(totalProgress * 100))%")
                         .font(.subheadline)
                         .foregroundStyle(.black1)
-                        .frame(maxHeight: .infinity, alignment: .bottomTrailing)
-                        .padding(.bottom, 5)
                 }
-                .frame(height: 45)
+                .padding(.bottom, 12)
                 
                 ProgressBar(progress: totalProgress)
             }
-            .padding(.trailing)
-            
-            Spacer()
-            Image(systemName: "chevron.right")
-                .foregroundStyle(.black1)
-                .frame(height: 75, alignment: .bottom)
-                .padding(.bottom, 15)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white)
+                    .shadow(color: .blackShadow, radius: 10, y: 5)
+            )
+            .padding(.horizontal)
         }
     }
     
-    private var goalListScrollView: some View {
-        return ScrollView {
-            GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
-                self.selectedGoal = selectedGoal
-            }, showValue: true)
-            .padding(.top)
-
-        }
+    private var goalsList: some View {
+        GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
+            self.selectedGoal = selectedGoal
+        }, showValue: true)
     }
     
     private func fetchUserName() {

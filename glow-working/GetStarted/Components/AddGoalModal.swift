@@ -1,163 +1,249 @@
 import SwiftUI
 import SymbolPicker
+import FirebaseAuth
 
 struct AddGoalModal: View {
     let units = [
-        "Distance": ["kilometers", "meters", "centimeters", "miles", "yards", "feet", "inches"],
-        "Time": ["hours", "minutes", "seconds"]
+        "Distance": ["kilometers", "meters", "miles", "yards"],
+        "Time": ["hours", "minutes"],
+        "Count": ["repetitions", "sets", "times"],
+        "Weight": ["kilograms", "pounds"],
+        "Other": ["pages", "meals", "tasks"]
     ]
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var icon: String = "star.fill"
     @State private var iconPickerPresented = false
-    @State var goalName: String = ""
-    @State var goalDescription: String = ""
-    @State var goalUnit: String = ""
+    @State private var goalName: String = ""
+    @State private var goalDescription: String = ""
+    @State private var goalUnit: String = ""
     @State private var quantity: String = ""
-    @State private var isButtonEnabled: Bool = false
+    @State private var showUnitSheet = false
+    @State private var selectedCategory: String?
     
-    // New property to handle goal addition
-    var onAddGoal: (TemplateGoal) -> Void
+    let onAddGoal: (TemplateGoal) -> Void
+
+    var formIsValid: Bool {
+        !goalName.isEmpty && !goalUnit.isEmpty && !quantity.isEmpty
+    }
 
     var body: some View {
-        ZStack {
-            Color.whitePrimary.edgesIgnoringSafeArea(.all)
-            
-            NavigationStack {
-                VStack(spacing: 16) {
-                    iconSection
-                    goalDetailsSection
-                    unitAndQuantitySection
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            presentationMode.wrappedValue.dismiss()
+        NavigationStack {
+            ZStack {
+                Color.whitePrimary.edgesIgnoringSafeArea(.all)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 32) {
+                        iconSection
+                        goalDetailsSection
+                        measurementSection
+                        
+                        if !goalUnit.isEmpty {
+                            targetSection
+                                .transition(.opacity)
                         }
+                        
+                        Spacer(minLength: 30)
                     }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") {
-                            let newGoal = TemplateGoal(iconName: icon, title: goalName, description: goalDescription, checked: true)
-                            onAddGoal(newGoal) // Call the closure with the new goal
-                            presentationMode.wrappedValue.dismiss()
-                        }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
                     }
                 }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add") {
+                        saveGoal()
+                    }
+                    .bold()
+                    .disabled(!formIsValid)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text("New Goal")
+                        .font(.headline)
+                }
+            }
+            .sheet(isPresented: $iconPickerPresented) {
+                NavigationStack {
+                    SymbolPicker(symbol: $icon)
+                        .navigationTitle("Choose Icon")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") {
+                                    iconPickerPresented = false
+                                }
+                            }
+                        }
+                }
+                .presentationDetents([.medium, .large])
             }
         }
     }
 
     private var iconSection: some View {
-        VStack {
-            ZStack {
-                LinearGradient(
-                    gradient: Gradient(colors: [Color.yellowGradientStart, Color.yellowGradientEnd]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                Image(systemName: icon)
-                    .resizable()
-                    .scaledToFit()
-                    .padding(30)
-                    .foregroundColor(.black1)
-            }
-            .frame(width: 175, height: 175)
-            .cornerRadius(100)
-            .padding(.bottom, 3)
-            
+        VStack(spacing: 16) {
             Button(action: { iconPickerPresented = true }) {
-                Text("Edit Icon")
-                    .padding(5)
-                    .frame(width: 125)
-                    .background(Capsule().fill(Color.gray2))
-                    .foregroundStyle(.gray1)
-            }
-            .sheet(isPresented: $iconPickerPresented) {
-                SymbolPicker(symbol: $icon)
+                Circle()
+                    .fill(Color.yellow.opacity(0.2))
+                    .overlay(
+                        Image(systemName: icon)
+                            .font(.system(size: 200))
+                            .foregroundStyle(.black1)
+                    )
+                    .overlay(alignment: .bottomTrailing) {
+                        Image(systemName: "pencil.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .blue1)
+                            .font(.system(size: 75))
+                            .background(Circle().fill(.white))
+                    }
             }
         }
-        .padding(.bottom)
+        .frame(maxWidth: .infinity)
     }
 
     private var goalDetailsSection: some View {
-        VStack(spacing: 16) {
-            AppTextField(icon: "trophy.fill", placeholder: "Goal name", label: $goalName)
-            AppTextField(icon: "pencil", placeholder: "Goal description", label: $goalDescription)
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Name")
+                    .foregroundStyle(.gray1)
+                    .font(.subheadline)
+                AppTextField(
+                    icon: "pencil",
+                    placeholder: "Enter goal name",
+                    label: $goalName
+                )
+            }
+            
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Description")
+                    .foregroundStyle(.gray1)
+                    .font(.subheadline)
+                AppTextField(
+                    icon: "text.justify",
+                    placeholder: "Enter goal description (optional)",
+                    label: $goalDescription
+                )
+            }
         }
     }
 
-    private var unitAndQuantitySection: some View {
-        HStack {
-            NavigationLink(destination: UnitSelectionView(selectedUnit: $goalUnit, units: units)) {
-                unitPicker
-            }
-            if isButtonEnabled {
-                quantityField
-            }
-        }
-        .onChange(of: goalUnit) { oldValue, newValue in
-            isButtonEnabled = !newValue.isEmpty
-            if !isButtonEnabled { quantity = "" }
-        }
-    }
-
-    private var unitPicker: some View {
-        HStack {
+    private var measurementSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Unit")
                 .foregroundStyle(.gray1)
-            Text(goalUnit.isEmpty ? "" : goalUnit)
-                .foregroundStyle(.black1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.right")
-                .foregroundStyle(.gray1)
+                .font(.subheadline)
+            
+            Button(action: { showUnitSheet.toggle() }) {
+                HStack {
+                    Image(systemName: "ruler")
+                        .foregroundStyle(.gray1)
+                    Text(goalUnit.isEmpty ? "Choose measurement unit" : goalUnit)
+                        .foregroundStyle(goalUnit.isEmpty ? .gray1 : .black1)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.gray1)
+                        .font(.system(size: 14))
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
+            }
+            .sheet(isPresented: $showUnitSheet) {
+                NavigationStack {
+                    UnitSelectionView(
+                        selectedUnit: $goalUnit,
+                        units: units,
+                        dismiss: { showUnitSheet = false }
+                    )
+                }
+                .presentationDetents([.medium])
+            }
         }
-        .padding()
-        .frame(height: 50)
-        .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
+    }
+
+    private var targetSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Daily Target")
+                .foregroundStyle(.gray1)
+                .font(.subheadline)
+            
+            AppTextField(
+                icon: "target",
+                placeholder: "Enter amount",
+                label: $quantity
+            )
+            .keyboardType(.decimalPad)
+            
+            Text("Set your target goal in \(goalUnit)")
+                .font(.footnote)
+                .foregroundStyle(.gray1)
+                .padding(.leading, 4)
+        }
     }
     
-    private var quantityField: some View {
-        TextField("Quantity", text: $quantity)
-            .padding()
-            .frame(width: 100, height: 50, alignment: .leading)
-            .background(RoundedRectangle(cornerRadius: 14).fill(Color.gray2))
+    private func saveGoal() {
+        let newGoal = TemplateGoal(
+            iconName: icon,
+            title: goalName,
+            description: goalDescription,
+            checked: true
+        )
+        onAddGoal(newGoal)
+        dismiss()
     }
 }
 
 struct UnitSelectionView: View {
     @Binding var selectedUnit: String
     let units: [String: [String]]
+    let dismiss: () -> Void
     
     var body: some View {
-        List {
-            ForEach(units.keys.sorted(), id: \.self) { section in
-                Section(header: Text(section)) {
-                    ForEach(units[section] ?? [], id: \.self) { unit in
-                        Button(action: {
-                            selectedUnit = unit
-                        }) {
-                            HStack {
-                                Text(unit)
-                                    .foregroundStyle(.black1)
-                                if selectedUnit == unit {
+        ZStack {
+            Color.whitePrimary.ignoresSafeArea()
+            
+            List {
+                ForEach(Array(units.keys).sorted(), id: \.self) { category in
+                    Section(category) {
+                        ForEach(units[category] ?? [], id: \.self) { unit in
+                            Button(action: {
+                                selectedUnit = unit
+                                dismiss()
+                            }) {
+                                HStack {
+                                    Text(unit)
                                     Spacer()
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.blue)
+                                    if selectedUnit == unit {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.blue1)
+                                    }
                                 }
                             }
+                            .foregroundStyle(.black1)
                         }
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Select Unit")
+        .navigationTitle("Choose Unit")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
     }
 }
 
-struct MyModalView_Previews: PreviewProvider {
-    static var previews: some View {
-        AddGoalModal(goalName: "", goalDescription: "", onAddGoal: { _ in })
-    }
+#Preview {
+    AddGoalModal { _ in }
 }

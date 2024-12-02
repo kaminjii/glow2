@@ -4,8 +4,8 @@ import FirebaseCore
 struct EditGoalProgressView: View {
     @Binding var goal: Goal
     @ObservedObject var viewModel: EditGoalProgressViewModel
-    
     @Environment(\.dismiss) var dismiss
+    
     var onSave: () -> Void
     
     init(goal: Binding<Goal>, onSave: @escaping () -> Void) {
@@ -15,135 +15,147 @@ struct EditGoalProgressView: View {
     }
     
     var body: some View {
-        ZStack {
-            backgroundView
-            contentView
+        NavigationStack {
+            ZStack {
+                Color.whitePrimary.ignoresSafeArea()
+                
+                VStack(spacing: 24) {
+                    goalInfo
+                    progressSection
+                    Spacer()
+                }
+                .padding()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        handleSave()
+                    }
+                    .fontWeight(.semibold)
+                }
+                ToolbarItem(placement: .principal) {
+                    Text(viewModel.goal.name)
+                        .font(.headline)
+                }
+            }
         }
-        .padding(.horizontal)
-        .edgesIgnoringSafeArea(.bottom)
-        .gesture(dragGesture)
         .onAppear(perform: viewModel.fetchGoalData)
-    }
-    
-    private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 0, style: .continuous)
-            .fill(Color.whitePrimary)
-    }
-    
-    private var contentView: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            goalInfo
-            goalInputSection
-            saveButton
-                .padding(.bottom)
-        }
-        .padding()
-        .frame(height: 375)
+        .presentationDragIndicator(.visible)
     }
     
     private var goalInfo: some View {
-        HStack {
+        HStack(spacing: 20) {
             LargeGradientIcon(iconName: viewModel.goal.icon)
-                .padding(.trailing)
+                .frame(width: 70, height: 70)
             
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(viewModel.goal.name)
-                    .font(.title)
+                    .font(.title2.bold())
                     .foregroundStyle(.black1)
                 Text(viewModel.goal.detail ?? "")
-                    .font(.title3)
+                    .font(.subheadline)
                     .foregroundStyle(.gray1)
+                    .lineLimit(2)
             }
             Spacer()
         }
-        .padding(.bottom, 30)
     }
     
-    private var goalInputSection: some View {
-        VStack(spacing: 0) {
-            Text(viewModel.goal.unit)
-                .font(.title3)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    private var progressSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Progress")
+                    .font(.headline)
+                    .foregroundStyle(.black1)
+                Text("\(viewModel.goal.quantityComplete, specifier: "%.1f") of \(viewModel.goal.quantityGoal, specifier: "%.1f") \(viewModel.goal.unit)")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray1)
+            }
             
+            progressControls
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+                .shadow(color: .blackShadow, radius: 10, y: 5)
+        )
+    }
+    
+    private var progressControls: some View {
+        VStack(spacing: 16) {
+            // Slider
+            Slider(value: Binding(
+                get: { viewModel.goal.quantityComplete },
+                set: { newValue in
+                    viewModel.goal.quantityComplete = newValue
+                    viewModel.inputValue = String(format: "%.1f", newValue)
+                }
+            ), in: 0...Double(viewModel.goal.quantityGoal))
+            .tint(.blue1)
+            
+            // Manual Input
             HStack {
-                goalSlider
-                inputTextField
+                Text("Enter value:")
+                    .font(.subheadline)
+                    .foregroundStyle(.gray1)
+                
+                TextField("0", text: $viewModel.inputValue)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 80)
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray2)
+                    )
+                    .onChange(of: viewModel.inputValue) { _, newValue in
+                        if let value = Double(newValue), value >= 0, value <= Double(viewModel.goal.quantityGoal) {
+                            viewModel.goal.quantityComplete = value
+                        }
+                    }
+                
+                Text(viewModel.goal.unit)
+                    .font(.subheadline)
+                    .foregroundStyle(.gray1)
             }
-            .padding(.bottom, 40)
         }
     }
     
-    private var goalSlider: some View {
-        Slider(value: Binding(
-            get: { viewModel.goal.quantityComplete },
-            set: { newValue in
-                viewModel.goal.quantityComplete = newValue
-                viewModel.inputValue = String(format: "%.2f", newValue)
-            }
-        ), in: 0...Double(viewModel.goal.quantityGoal))
-    }
-    
-    private var inputTextField: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.gray1, lineWidth: 1)
+    private func handleSave() {
+        viewModel.saveGoal {
+            let dailyLogRepository = DailyLogRepository()
+            let goalDate = viewModel.goal.date.dateValue()
             
-            TextField("0", text: $viewModel.inputValue)
-                .padding(10)
-                .foregroundStyle(.black1)
-                .keyboardType(.decimalPad)
-                .onChange(of: viewModel.inputValue) { oldValue, newValue in
-                    if let value = Double(newValue), value >= 0, value <= Double(viewModel.goal.quantityGoal) {
-                        viewModel.goal.quantityComplete = value
-                    } else {
-                        print("Invalid input: \(newValue). Must be between 0 and \(viewModel.goal.quantityGoal).")
-                    }
+            dailyLogRepository.updateTotalProgress(for: goalDate) {
+                DispatchQueue.main.async {
+                    self.goal = viewModel.goal
+                    dismiss()
+                    onSave()
                 }
-        }
-        .frame(width: 70, height: 20, alignment: .trailing)
-    }
-    
-//    private var saveButton: some View {
-//        GradientButton(title: "Save", action: {
-//            viewModel.saveGoal {
-//                onSave() 
-//                dismiss()
-//            }
-//        }, isEnabled: true)
-//    }
-    private var saveButton: some View {
-        GradientButton(title: "Save", action: {
-            viewModel.saveGoal {
-
-                let dailyLogRepository = DailyLogRepository()
-                
-                let goalDate = viewModel.goal.date.dateValue()
-                dailyLogRepository.updateTotalProgress(for: goalDate) {
-                    DispatchQueue.main.async {
-                        self.goal = viewModel.goal
-                        dismiss()
-                        onSave()
-                    }
-                }
-                
-            }
-        }, isEnabled: true)
-    }
-
-    
-    private var dragGesture: some Gesture {
-        DragGesture().onEnded { value in
-            if value.translation.height > 100 {
-                dismiss()
             }
         }
     }
 }
 
-
 #Preview {
-    let sampleGoal = Goal(id: "\(UUID())", date: Timestamp(date: Date()), deleted: false, detail: "Exercise for 1 hour", icon: "figure.run", name: "Exercise", quantityComplete: 0.5, quantityGoal: 1, unit: "hours")
+    let sampleGoal = Goal(
+        id: "\(UUID())",
+        date: Timestamp(date: Date()),
+        deleted: false,
+        detail: "Exercise for 1 hour",
+        icon: "figure.run",
+        name: "Exercise",
+        quantityComplete: 0.5,
+        quantityGoal: 1,
+        unit: "hours"
+    )
     
-    EditGoalProgressView(goal: .constant(sampleGoal), onSave: {})
+    return EditGoalProgressView(goal: .constant(sampleGoal), onSave: {})
 }

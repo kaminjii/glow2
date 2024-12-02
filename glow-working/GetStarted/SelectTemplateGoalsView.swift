@@ -7,13 +7,186 @@ struct SelectTemplateGoalsView: View {
     @State private var showAddGoal: Bool = false
     @State private var selectedGoals: Set<Int> = []
     @State private var isProcessing: Bool = false
+    @State private var animate = false
+    @State private var showError = false
+    @State private var errorMessage = ""
     
-    @State var templateGoals: [TemplateGoal] = [
-        TemplateGoal(iconName: "figure.run", title: "Exercise", description: "Exercise for 1 hour", checked: false),
-        TemplateGoal(iconName: "book.fill", title: "Read", description: "Read for 30 minutes", checked: false),
-        TemplateGoal(iconName: "flame.fill", title: "Diet", description: "Eat healthy meals", checked: false),
-        TemplateGoal(iconName: "bed.double.fill", title: "Sleep", description: "Get 8 hours of sleep", checked: false)
+    @EnvironmentObject var viewModel: AuthenticationViewModel
+    
+    let templateGoals: [TemplateGoal] = [
+        TemplateGoal(
+            iconName: "figure.run",
+            title: "Exercise",
+            description: "Stay active and healthy with daily exercise",
+            checked: false
+        ),
+        TemplateGoal(
+            iconName: "book.fill",
+            title: "Read",
+            description: "Develop your mind through daily reading",
+            checked: false
+        ),
+        TemplateGoal(
+            iconName: "flame.fill",
+            title: "Diet",
+            description: "Maintain a balanced and healthy diet",
+            checked: false
+        ),
+        TemplateGoal(
+            iconName: "bed.double.fill",
+            title: "Sleep",
+            description: "Get quality sleep for better health",
+            checked: false
+        )
     ]
+    
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AnimatedStarField()
+                
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 24) {
+                        welcomeSection
+                        goalGrid
+                        customGoalButton
+                        Spacer(minLength: 60)
+                    }
+                }
+                
+                VStack {
+                    Spacer()
+                    continueButton
+                }
+                .padding()
+            }
+            .navigationDestination(isPresented: $done) {
+                ContentView()
+            }
+        }
+        .sheet(isPresented: $showAddGoal) {
+            AddGoalModal { _ in
+                // Handle custom goal
+            }
+        }
+        .alert("Error", isPresented: $showError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage)
+        }
+        .onAppear {
+            withAnimation(.spring(duration: 1.0)) {
+                animate = true
+            }
+        }
+    }
+    
+    private var welcomeSection: some View {
+        VStack(spacing: 16) {
+            Image("glowLogoYellow")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 80, height: 80)
+                .scaleEffect(animate ? 1 : 0.5)
+            
+            VStack(spacing: 8) {
+                Text("Choose Your Goals")
+                    .font(.title)
+                    .fontWeight(.bold)
+                    .opacity(animate ? 1 : 0)
+                    .offset(y: animate ? 0 : 20)
+                
+                Text("Select the habits you want to track daily")
+                    .font(.subheadline)
+                    .foregroundColor(.gray1)
+                    .multilineTextAlignment(.center)
+                    .opacity(animate ? 1 : 0)
+                    .offset(y: animate ? 0 : 20)
+            }
+        }
+        .padding(.top, 40)
+    }
+    
+    private var goalGrid: some View {
+        LazyVGrid(columns: [
+            GridItem(.flexible(), spacing: 16),
+            GridItem(.flexible(), spacing: 16)
+        ], spacing: 16) {
+            ForEach(templateGoals.indices, id: \.self) { index in
+                TemplateGoalCard(
+                    goal: templateGoals[index],
+                    isSelected: selectedGoals.contains(index)
+                ) {
+                    if selectedGoals.contains(index) {
+                        selectedGoals.remove(index)
+                    } else {
+                        selectedGoals.insert(index)
+                    }
+                }
+                .opacity(animate ? 1 : 0)
+                .offset(y: animate ? 0 : 20)
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    private var customGoalButton: some View {
+        Button(action: { showAddGoal = true }) {
+            HStack {
+                Image(systemName: "plus.circle.fill")
+                Text("Add Custom Goal")
+            }
+            .font(.headline)
+            .foregroundColor(.blue1)
+            .padding()
+            .frame(maxWidth: .infinity)
+            .background(Color.blue1.opacity(0.1))
+            .cornerRadius(12)
+        }
+        .padding(.horizontal)
+        .opacity(animate ? 1 : 0)
+    }
+    
+    private var continueButton: some View {
+        VStack {
+            if isProcessing {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .gray))
+                    .scaleEffect(1.2)
+            } else {
+                GradientButton(
+                    title: "Continue",
+                    action: handleContinue,
+                    isEnabled: !isProcessing
+                )
+            }
+        }
+    }
+    
+    private func handleContinue() {
+        guard !selectedGoals.isEmpty else {
+            errorMessage = "Please select at least one goal"
+            showError = true
+            return
+        }
+        
+        isProcessing = true
+        Task {
+            do {
+                try await addSelectedGoalsToFirestore()
+                DispatchQueue.main.async {
+                    isProcessing = false
+                    done = true
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    isProcessing = false
+                    errorMessage = "Failed to save goals. Please try again."
+                    showError = true
+                }
+            }
+        }
+    }
     
     private func getGoalDetails(for title: String) -> (unit: String, quantityGoal: Double) {
         switch title.lowercased() {
@@ -30,140 +203,69 @@ struct SelectTemplateGoalsView: View {
         }
     }
     
-    private func addSelectedGoalsToFirestore() async {
+    private func addSelectedGoalsToFirestore() async throws {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("No authenticated user found")
-            return
+            throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No authenticated user found"])
         }
         
         let db = Firestore.firestore()
         let goalsCollection = db.collection("users").document(userId).collection("goals")
         
-        do {
-            // Add each selected goal to Firestore
-            for index in selectedGoals {
-                let goal = templateGoals[index]
-                let (unit, quantityGoal) = getGoalDetails(for: goal.title)
-                
-                let goalData: [String: Any] = [
-                    "date": Timestamp(date: Date()),
-                    "deleted": false,
-                    "detail": goal.description,
-                    "icon": goal.iconName,
-                    "name": goal.title,
-                    "quantityComplete": 0.0,
-                    "quantityGoal": quantityGoal,
-                    "unit": unit
-                ]
-                
-                // Add more detailed error handling and logging
-                do {
-                    let docRef = try await goalsCollection.addDocument(data: goalData)
-                    print("Successfully added goal: \(goal.title) with ID: \(docRef.documentID)")
-                } catch {
-                    print("Error adding goal \(goal.title): \(error.localizedDescription)")
-                    throw error
-                }
-            }
-        } catch {
-            print("Failed to add goals: \(error.localizedDescription)")
-            // Make sure to handle the failure state
-            DispatchQueue.main.async {
-                isProcessing = false
-                // Optionally show an alert to the user
-            }
+        for index in selectedGoals {
+            let goal = templateGoals[index]
+            let (unit, quantityGoal) = getGoalDetails(for: goal.title)
+            
+            let goalData: [String: Any] = [
+                "date": Timestamp(date: Date()),
+                "deleted": false,
+                "detail": goal.description,
+                "icon": goal.iconName,
+                "name": goal.title,
+                "quantityComplete": 0.0,
+                "quantityGoal": quantityGoal,
+                "unit": unit
+            ]
+            
+            _ = try await goalsCollection.addDocument(data: goalData)
         }
+        
+        await viewModel.completeOnboarding()
     }
+}
+
+struct TemplateGoalCard: View {
+    let goal: TemplateGoal
+    let isSelected: Bool
+    let action: () -> Void
     
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.whitePrimary.edgesIgnoringSafeArea(.all)
+        Button(action: action) {
+            VStack(spacing: 12) {
+                Image(systemName: goal.iconName)
+                    .font(.system(size: 30))
+                    .foregroundColor(isSelected ? .white : .blue1)
                 
-                VStack {
-                    Text("What would you like to \ntrack?")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 16)
-                        .font(.title)
-                    
-                    ScrollView {
-                            ForEach(templateGoals.indices, id: \.self) { index in
-                                TemplateGoalItem(goal: $templateGoals[index]) {
-                                    if selectedGoals.contains(index) {
-                                        selectedGoals.remove(index)
-                                    } else {
-                                        selectedGoals.insert(index)
-                                    }
-                                    print("Selected goals: \(selectedGoals)")
-                                }
-                                .padding(.vertical, 5)
-                                .shadow(color: .blackShadow, radius: 20, y: 10)
-                            }
-                            .padding(.horizontal)
-                    
-                        AddOtherGoal(isPresented: $showAddGoal)
-                            .padding(.vertical, 5)
-                            .padding(.horizontal)
-                            .shadow(color: .blackShadow, radius: 20, y: 10)
-                        Spacer()
-                    }
-                }
+                Text(goal.title)
+                    .font(.headline)
+                    .foregroundColor(isSelected ? .white : .primary)
                 
-                VStack {
-                    Spacer()
-                    
-                    if isProcessing {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-                            .padding()
-                    } else {
-                        GradientButton(title: "Done", action: {
-                            guard !selectedGoals.isEmpty else {
-                                print("No goals selected")
-                                return
-                            }
-                            
-                            isProcessing = true
-                            
-                            // Update UI for selected goals
-                            for index in selectedGoals {
-                                templateGoals[index].checked = true
-                            }
-                            
-                            Task {
-                                do {
-                                    await addSelectedGoalsToFirestore()
-                                    // Only proceed if successful
-                                    DispatchQueue.main.async {
-                                        isProcessing = false
-                                        done = true
-                                    }
-                                } catch {
-                                    // Handle any errors
-                                    DispatchQueue.main.async {
-                                        isProcessing = false
-                                        print("Failed to add goals: \(error.localizedDescription)")
-                                        // Optionally show an alert to the user
-                                    }
-                                }
-                            }
-                        }, isEnabled: !isProcessing)
-                        .padding()
-                    }
-                }
+                Text(goal.description)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : .gray1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
             }
-            .navigationDestination(isPresented: $done) {
-                ContentView()
-            }
-            .toolbarVisibility(.hidden)
-            .sheet(isPresented: $showAddGoal) {
-                AddGoalModal { newGoal in
-                    templateGoals.append(newGoal)
-                }
-            }
+            .frame(height: 140)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(isSelected ? Color.blue1 : Color.white)
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
         }
     }
 }
+
 #Preview {
     SelectTemplateGoalsView()
+        .environmentObject(AuthenticationViewModel())
 }
