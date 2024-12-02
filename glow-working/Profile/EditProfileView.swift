@@ -30,7 +30,7 @@ struct EditProfileView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("Done") {
                         Task {
                             await viewModel.updateProfile()
                             dismiss()
@@ -166,13 +166,16 @@ struct ChangePasswordView: View {
     
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    SecureField("Current Password", text: $currentPassword)
-                    SecureField("New Password", text: $newPassword)
-                    SecureField("Confirm New Password", text: $confirmPassword)
-                }
+            VStack(spacing: 16) {
+                AppTextField(icon: "lock.fill", placeholder: "Current Password", isSecure: true, label: $currentPassword)
+                AppTextField(icon: "lock.fill", placeholder: "New Password", isSecure: true, label: $currentPassword)
+                AppTextField(icon: "lock.fill", placeholder: "Comfirm New Password", isSecure: true, label: $currentPassword)
+                
+                Spacer()
+                
             }
+            .padding()
+            .background(Color.whitePrimary)
             .navigationTitle("Change Password")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -180,7 +183,7 @@ struct ChangePasswordView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
+                    Button("Done") {
                         Task {
                             await viewModel.updatePassword(currentPassword: currentPassword, newPassword: newPassword)
                             dismiss()

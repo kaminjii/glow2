@@ -84,7 +84,7 @@ struct StarView: View {
     @State private var scale: CGFloat = 1.0
     
     var body: some View {
-        Image(systemName: "star.fill")
+        Image("glowStar")
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

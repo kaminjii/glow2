@@ -63,6 +63,8 @@ struct HomeScreenView: View {
         }
     }
     
+// MARK: components
+    
     private var headerGradient: some View {
         LinearGradient(
             gradient: Gradient(colors: [backgroundColor, .whitePrimary]),
@@ -125,6 +127,9 @@ struct HomeScreenView: View {
         }, showValue: true)
     }
     
+// MARK: helper functions
+    
+    // Fetch user name from Firestore
     private func fetchUserName() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -142,6 +147,7 @@ struct HomeScreenView: View {
         }
     }
     
+    // Fetch goals for the current day
     private func fetchGoalsForToday() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -168,6 +174,7 @@ struct HomeScreenView: View {
             }
     }
 
+    // Fetch progress for the current day
     private func fetchDailyLogForToday() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -203,7 +210,7 @@ struct HomeScreenView: View {
             }
     }
 
-    
+    // Star image based on progress
     private var starImage: String {
         switch totalProgress {
         case 0..<0.2:
@@ -221,6 +228,7 @@ struct HomeScreenView: View {
         }
     }
     
+    // Background color based on progress
     private var backgroundColor: Color {
         switch totalProgress {
         case 0..<0.2:

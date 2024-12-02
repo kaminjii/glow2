@@ -16,7 +16,7 @@ struct TodaysProgressView: View {
                         progressCard
                         noteSection
                         photoSection
-                        Spacer(minLength: 40) // Add bottom spacing
+                        Spacer(minLength: 40)
                     }
                     .padding()
                 }
@@ -29,7 +29,7 @@ struct TodaysProgressView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    Button("Done") {
                         viewModel.saveProgress()
                         dismiss()
                     }
@@ -49,6 +49,7 @@ struct TodaysProgressView: View {
         }
     }
     
+    // Progress card displaying overall progress percentage
     private var progressCard: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
@@ -81,6 +82,8 @@ struct TodaysProgressView: View {
         )
     }
     
+    
+    // Note-taking section
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Notes")
@@ -97,6 +100,7 @@ struct TodaysProgressView: View {
         }
     }
     
+    // Photo upload section
     private var photoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Photo")
