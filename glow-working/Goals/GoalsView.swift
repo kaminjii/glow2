@@ -35,7 +35,6 @@ struct GoalsView: View {
                         }
                     }
                     .padding()
-                    .padding(.top, 60)
                     .background(Color.whitePrimary)
                     
                     if goals.isEmpty {

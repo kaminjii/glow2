@@ -51,7 +51,7 @@ struct EditExistingDayView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    Button("Done") {
                         saveChanges()
                     }
                     .fontWeight(.semibold)

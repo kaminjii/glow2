@@ -19,39 +19,34 @@ struct MonthlyCalendarView: View {
                 DateScrollView()
                     .environmentObject(dateHolder)
                     .padding(.horizontal)
-                    .padding(.vertical, 16)
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        // Days of Week Header
-                        dayOfWeekStack
-                            .padding(.top, 8)
-                        
-                        // Calendar Grid
-                        calendarGrid
-                            .padding(.horizontal, 8)
-                            .padding(.bottom)
-                        
-                        // Selected Date Card
-                        if let selectedDate = selectedDate {
-                            DayCard(
-                                date: selectedDate.date.dateValue(),
-                                progress: selectedDate.totalProgress,
-                                note: selectedDate.note ?? "",
-                                dailyLog: selectedDate,
-                                showEditDay: $showEditDay
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .padding(.horizontal)
-                            .fullScreenCover(isPresented: $showEditDay) {
-                                EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
-                                    self.selectedDate = updatedLog
-                                })
-                            }
+                VStack(spacing: 20) {
+                    // Days of Week Header
+                    dayOfWeekStack
+                    
+                    // Calendar Grid
+                    calendarGrid
+                        .padding(.horizontal, 8)
+                    
+                    // Selected Date Card
+                    if let selectedDate = selectedDate {
+                        DayCard(
+                            date: selectedDate.date.dateValue(),
+                            progress: selectedDate.totalProgress,
+                            note: selectedDate.note ?? "",
+                            dailyLog: selectedDate,
+                            showEditDay: $showEditDay
+                        )
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.horizontal)
+                        .fullScreenCover(isPresented: $showEditDay) {
+                            EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
+                                self.selectedDate = updatedLog
+                            })
                         }
-                        
-                        Spacer(minLength: 20)
                     }
+                    
+                    Spacer(minLength: 20)
                 }
                 .padding(.top)
             }

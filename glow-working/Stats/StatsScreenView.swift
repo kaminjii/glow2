@@ -14,7 +14,8 @@ struct StatsScreenView: View {
                 .frame(maxWidth: .infinity)
                 .foregroundStyle(.black1)
                 .padding(.top)
-            
+                .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
+
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Monthly Overview
