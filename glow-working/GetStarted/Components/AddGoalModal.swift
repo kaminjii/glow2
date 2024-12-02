@@ -91,16 +91,17 @@ struct AddGoalModal: View {
             Button(action: { iconPickerPresented = true }) {
                 Circle()
                     .fill(Color.yellow.opacity(0.2))
+                    .frame(width: 100, height: 100)
                     .overlay(
                         Image(systemName: icon)
-                            .font(.system(size: 200))
+                            .font(.system(size: 40))
                             .foregroundStyle(.black1)
                     )
                     .overlay(alignment: .bottomTrailing) {
                         Image(systemName: "pencil.circle.fill")
                             .symbolRenderingMode(.palette)
                             .foregroundStyle(.white, .blue1)
-                            .font(.system(size: 75))
+                            .font(.system(size: 24))
                             .background(Circle().fill(.white))
                     }
             }

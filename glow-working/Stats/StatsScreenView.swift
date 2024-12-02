@@ -12,6 +12,7 @@ struct StatsScreenView: View {
                 VStack(spacing: 24) {
                     // Monthly Overview
                     MonthlyOverviewCard(monthlyProgress: viewModel.monthlyProgress)
+                        .padding(.top, 20)
                     
                     // Streak Stats
                     StreakCard(
