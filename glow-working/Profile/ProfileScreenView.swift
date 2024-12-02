@@ -88,7 +88,7 @@ struct ProfileScreenView: View {
                 value: "\(viewModel.streak) Days"
             )
         }
-        .padding(24)
+        .padding()
         .background(
             LinearGradient(
                 colors: [.blueGradientStart, .blueGradientEnd],
