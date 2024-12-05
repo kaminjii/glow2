@@ -2,12 +2,14 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+// Stats view displays a user's activity stats, including streaks, goals, and progress.
 struct StatsScreenView: View {
-    @Binding var selectedTab: Int
-    @StateObject private var viewModel = StatsViewModel()
+    @Binding var selectedTab: Int // Tracks the currently selected tab in the app
+    @StateObject private var viewModel = StatsViewModel() // ViewModel to manage stats data and logic
     
     var body: some View {
         VStack(spacing: 0) {
+            // Main content area (scrollable)
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     // Monthly Overview
@@ -34,15 +36,16 @@ struct StatsScreenView: View {
             .padding(.top, 1)
             .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
             .onAppear {
-                viewModel.fetchStats()
+                viewModel.fetchStats() // Loads stats data when view appears
             }
         }
     }
 }
 
 // MARK: - Monthly Overview Card
+// Displays a progress bar for the user's monthly activity
 struct MonthlyOverviewCard: View {
-    let monthlyProgress: Double
+    let monthlyProgress: Double // The user's progress as a percentage (0.0 to 1.0)
     
     var body: some View {
         VStack(spacing: 16) {
@@ -51,11 +54,12 @@ struct MonthlyOverviewCard: View {
                     .font(.headline)
                     .foregroundStyle(.black1)
                 Spacer()
-                Text("\(Int(monthlyProgress * 100))%")
+                Text("\(Int(monthlyProgress * 100))%") // Converts progress to percentage
                     .font(.title2).bold()
                     .foregroundStyle(.blue1)
             }
             
+            // visual progress bar
             ProgressBar(progress: monthlyProgress)
         }
         .padding(20)
@@ -68,10 +72,11 @@ struct MonthlyOverviewCard: View {
 }
 
 // MARK: - Streak Card
+// Displays the user's activity streak information
 struct StreakCard: View {
-    let currentStreak: Int
-    let longestStreak: Int
-    let averageCompletion: Double
+    let currentStreak: Int // Number of consecutive days of activity
+    let longestStreak: Int // User's longest streak ever
+    let averageCompletion: Double // Average completion percentage across activities
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -80,6 +85,7 @@ struct StreakCard: View {
                 .foregroundStyle(.black1)
             
             HStack(spacing: 20) {
+                // Displays current streak info
                 StreakItem(
                     icon: "flame.fill",
                     title: "Current",
@@ -89,6 +95,7 @@ struct StreakCard: View {
                 
                 Divider()
                 
+                // Displays longest streak info
                 StreakItem(
                     icon: "trophy.fill",
                     title: "Best",
@@ -98,6 +105,7 @@ struct StreakCard: View {
                 
                 Divider()
                 
+                // Displays average completion info
                 StreakItem(
                     icon: "chart.bar.fill",
                     title: "Average",
@@ -115,6 +123,7 @@ struct StreakCard: View {
     }
 }
 
+// Displays an individual streak item with an icon, title, value, and subtitle.
 struct StreakItem: View {
     let icon: String
     let title: String
@@ -144,8 +153,9 @@ struct StreakItem: View {
 }
 
 // MARK: - Top Goals Card
+// Displays the user's top-performing goals and their completion rates.
 struct TopGoalsCard: View {
-    let topGoals: [(Goal, Double)]
+    let topGoals: [(Goal, Double)] // List of goals and their completion percentages
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -153,6 +163,7 @@ struct TopGoalsCard: View {
                 .font(.headline)
                 .foregroundStyle(.black1)
             
+            // If no goals are completed, show a placeholder message
             if topGoals.isEmpty {
                 Text("Complete goals to see your stats")
                     .font(.subheadline)
@@ -160,6 +171,7 @@ struct TopGoalsCard: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
             } else {
+                // For each top goal, display a row with its details
                 ForEach(topGoals, id: \.0.id) { goal, completion in
                     HStack(spacing: 16) {
                         GradientIcon(iconName: goal.icon)
@@ -177,6 +189,7 @@ struct TopGoalsCard: View {
                         
                         Spacer()
                         
+                        // Display a star image based on the goal's completion percentage
                         Image(starImage(for: completion))
                             .resizable()
                             .scaledToFit()
@@ -193,6 +206,7 @@ struct TopGoalsCard: View {
         )
     }
     
+    // Determines the appropriate star image based on the completion percentage.
     private func starImage(for completion: Double) -> String {
         switch completion {
         case 0..<0.2: return "star5"
@@ -206,8 +220,9 @@ struct TopGoalsCard: View {
 }
 
 // MARK: - Weekly Progress Card
+// Displays the user's progress for each day of the week.
 struct WeeklyProgressCard: View {
-    let weeklyProgress: [Double]
+    let weeklyProgress: [Double] // List of progress values for each day (0.0 to 1.0)
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -215,6 +230,7 @@ struct WeeklyProgressCard: View {
                 .font(.headline)
                 .foregroundStyle(.black1)
             
+            // Display each day's progress and label
             HStack(spacing: 16) {
                 ForEach(Array(weeklyProgress.enumerated()), id: \.offset) { index, progress in
                     VStack(spacing: 8) {
@@ -239,6 +255,7 @@ struct WeeklyProgressCard: View {
         )
     }
     
+    // Returns the name of the day for a given index (0 = Sunday, 6 = Saturday)
     private func dayName(for index: Int) -> String {
         ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][index]
     }

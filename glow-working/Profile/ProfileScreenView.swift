@@ -13,33 +13,34 @@ enum EditType {
     case name, email, password
 }
 
+// Main view for the user's profile screen
 struct ProfileScreenView: View {
-    @Binding var selectedTab: Int
-    @State private var showActionSheet = false
-    @State private var showDeleteConfirmation = false
-    @StateObject private var viewModel = ProfileViewModel()
-    @EnvironmentObject var authViewModel: AuthenticationViewModel
+    @Binding var selectedTab: Int // Binding to track selected tab
+    @State private var showActionSheet = false // State to control the visibility of an action sheet
+    @State private var showDeleteConfirmation = false // State to confirm account deletion
+    @StateObject private var viewModel = ProfileViewModel() // StateObject for profile-related data
+    @EnvironmentObject var authViewModel: AuthenticationViewModel // Environment object for authentication
     
     var body: some View {
         NavigationStack {
-                
+            // Scrollable content to display profile details
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 32) {
-                    profileHeader
-                    statsCard
-                    achievementsSection
-                    accountButtons
+                    profileHeader // Displays the profile image and name
+                    statsCard // Displays user stats (recorded days, streaks)
+                    achievementsSection // Lists achievements
+                    accountButtons // Provides account-related actions (Sign Out, Delete Account)
                 }
                 .padding(.horizontal)
             }
             .padding(.top, 1)
         }
         .background(Color.whitePrimary).edgesIgnoringSafeArea(.all)
-        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) { viewModel.deleteAccount() }
+        .alert("Delete Account", isPresented: $showDeleteConfirmation) { // Confirmation dialog for account deletion
+            Button("Cancel", role: .cancel) {} // Cancel button
+            Button("Delete", role: .destructive) { viewModel.deleteAccount() } // Delete account button
         } message: {
-            Text("This action cannot be undone. All your data will be permanently deleted.")
+            Text("This action cannot be undone. All your data will be permanently deleted.") // Warning Message
         }
         .sheet(isPresented: $viewModel.showReauthDialog) {
             NavigationStack {
@@ -155,6 +156,7 @@ struct ProfileScreenView: View {
         }
     }
     
+    // Profile header with image, name, and edit profile button
     private var profileHeader: some View {
         VStack(spacing: 24) {
             Image(viewModel.starImage)
@@ -168,7 +170,7 @@ struct ProfileScreenView: View {
                     .font(.title).bold()
                     .foregroundStyle(.black1)
                 
-                Button(action: { viewModel.showEditProfile = true }) {
+                Button(action: { viewModel.showEditProfile = true }) { // Opens the EditProfileView
                     Label("Edit Profile", systemImage: "pencil")
                         .font(.subheadline)
                         .foregroundStyle(.blue1)
@@ -181,6 +183,7 @@ struct ProfileScreenView: View {
         }
     }
     
+    // Displays stats like recorded days and current streak
     private var statsCard: some View {
         HStack {
             StatView(
@@ -211,6 +214,7 @@ struct ProfileScreenView: View {
         .shadow(color: .blackShadow, radius: 15)
     }
     
+    // Section to list achievements
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -234,6 +238,7 @@ struct ProfileScreenView: View {
         }
     }
     
+    // Account-related action buttons (Sign Out and Delete Account)
     private var accountButtons: some View {
         VStack(spacing: 16) {
             ActionButton(
@@ -241,7 +246,7 @@ struct ProfileScreenView: View {
                 icon: "rectangle.portrait.and.arrow.right",
                 style: .secondary
             ) {
-                authViewModel.signOut()
+                authViewModel.signOut() // sign out action
             }
             
             ActionButton(
@@ -249,13 +254,14 @@ struct ProfileScreenView: View {
                 icon: "trash",
                 style: .destructive
             ) {
-                showDeleteConfirmation = true
+                showDeleteConfirmation = true // Triggers delete confirmation alert
             }
         }
         .padding(.vertical)
     }
 }
 
+// View for displaying a statistic with an icon and text
 struct StatView: View {
     let icon: String
     let title: String
@@ -282,6 +288,7 @@ struct StatView: View {
     }
 }
 
+// View for displaying a single achievement
 struct AchievementCard: View {
     let achievement: Achievement
     
@@ -312,6 +319,7 @@ struct AchievementCard: View {
     }
 }
 
+// Custom button for actions
 struct ActionButton: View {
     let title: String
     let icon: String
