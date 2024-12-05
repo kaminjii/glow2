@@ -234,6 +234,7 @@ struct ProfileScreenView: View {
             }
         }
         .onAppear{
+            viewModel.loadAchievements()
             viewModel.refreshAchievements()
         }
     }

@@ -230,6 +230,190 @@ class ProfileViewModel: ObservableObject {
     func refreshAchievements() {
         checkAndUpdateAchievements()
     }
+
+    private func checkProgressAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
+        // Getting Started - Track your first goal
+        if !logs.isEmpty {
+            unlockAchievement(title: "Getting Started", collection: collection, batch: batch)
+        }
+        
+        // Progress Pioneer - Reach 50% completion on all goals
+        let daysWithAllGoals50Percent = logs.filter { log in
+            log.totalProgress >= 0.5
+        }.count
+        
+        if daysWithAllGoals50Percent > 0 {
+            unlockAchievement(title: "Progress Pioneer", collection: collection, batch: batch)
+        }
+        
+        // Consistency King - Maintain 80% completion for a week
+        var consecutiveDaysOver80 = 0
+        var maxConsecutiveDaysOver80 = 0
+        let calendar = Calendar.current
+        var previousDate: Date?
+        
+        for log in logs {
+            let currentDate = calendar.startOfDay(for: log.date.dateValue())
+            
+            if log.totalProgress >= 0.8 {
+                if let prevDate = previousDate {
+                    let daysBetween = calendar.dateComponents([.day], from: currentDate, to: prevDate).day ?? 0
+                    if daysBetween == 1 {
+                        consecutiveDaysOver80 += 1
+                    } else {
+                        consecutiveDaysOver80 = 1
+                    }
+                } else {
+                    consecutiveDaysOver80 = 1
+                }
+                maxConsecutiveDaysOver80 = max(maxConsecutiveDaysOver80, consecutiveDaysOver80)
+            } else {
+                consecutiveDaysOver80 = 0
+            }
+            previousDate = currentDate
+        }
+        
+        if maxConsecutiveDaysOver80 >= 7 {
+            unlockAchievement(title: "Consistency King", collection: collection, batch: batch)
+        }
+    }
+
+    private func updateCheckCompletionAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
+        let calendar = Calendar.current
+        let perfectDays = logs.filter { $0.totalProgress >= 1.0 }.count
+        
+        // Track consecutive perfect days
+        var consecutivePerfectDays = 0
+        var maxConsecutivePerfectDays = 0
+        var previousDate: Date?
+        
+        for log in logs {
+            let currentDate = calendar.startOfDay(for: log.date.dateValue())
+            
+            if log.totalProgress >= 1.0 {
+                if let prevDate = previousDate {
+                    let daysBetween = calendar.dateComponents([.day], from: currentDate, to: prevDate).day ?? 0
+                    if daysBetween == 1 {
+                        consecutivePerfectDays += 1
+                    } else {
+                        consecutivePerfectDays = 1
+                    }
+                } else {
+                    consecutivePerfectDays = 1
+                }
+                maxConsecutivePerfectDays = max(maxConsecutivePerfectDays, consecutivePerfectDays)
+            } else {
+                consecutivePerfectDays = 0
+            }
+            previousDate = currentDate
+        }
+        
+        // Perfect Day
+        if perfectDays > 0 {
+            unlockAchievement(title: "Perfect Day", collection: collection, batch: batch)
+        }
+        
+        // Perfect Week
+        if maxConsecutivePerfectDays >= 7 {
+            unlockAchievement(title: "Perfect Week", collection: collection, batch: batch)
+        }
+        
+        // Goal Crusher & Century Club
+        // Using totalProgress as an indicator of completed goals
+        // Assuming a progress of 1.0 means all goals for that day were completed
+        let totalCompletedDays = logs.filter { $0.totalProgress >= 1.0 }.count
+        
+        if totalCompletedDays >= 50 {
+            unlockAchievement(title: "Goal Crusher", collection: collection, batch: batch)
+        }
+        
+        if totalCompletedDays >= 100 {
+            unlockAchievement(title: "Century Club", collection: collection, batch: batch)
+        }
+    }
+    
+    private func updateCheckSpecialAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
+        let calendar = Calendar.current
+        
+        // Early Bird & Night Owl
+        for log in logs {
+            let date = log.date.dateValue()
+            let hour = calendar.component(.hour, from: date)
+            
+            if hour <= 8 {
+                unlockAchievement(title: "Early Bird", collection: collection, batch: batch)
+            }
+            
+            if hour >= 22 {
+                unlockAchievement(title: "Night Owl", collection: collection, batch: batch)
+            }
+        }
+        
+        // Weekend Warrior
+        var weekendPerfectDays = [Date: Bool]()
+        for log in logs {
+            let date = log.date.dateValue()
+            let weekday = calendar.component(.weekday, from: date)
+            
+            // Check if it's weekend (Saturday or Sunday)
+            if weekday == 1 || weekday == 7 {
+                if log.totalProgress >= 1.0 {
+                    weekendPerfectDays[calendar.startOfDay(for: date)] = true
+                }
+            }
+        }
+        
+        // Check if there are 8 weekend days (equivalent to a month of weekends)
+        if weekendPerfectDays.count >= 8 {
+            unlockAchievement(title: "Weekend Warrior", collection: collection, batch: batch)
+        }
+        
+        // Comeback King
+        if logs.count >= 2 {
+            for i in 0..<logs.count-1 {
+                let currentLogDate = logs[i].date.dateValue()
+                let previousLogDate = logs[i+1].date.dateValue()
+                
+                let daysBetween = calendar.dateComponents([.day], from: previousLogDate, to: currentLogDate).day ?? 0
+                
+                if daysBetween >= 7 {
+                    unlockAchievement(title: "Comeback King", collection: collection, batch: batch)
+                    break
+                }
+            }
+        }
+    }
+
+    // Update the checkAndUpdateAchievements function to use the new checks
+    private func checkAndUpdateAchievements() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        let batch = db.batch()
+        let achievementsCollection = db.collection("users").document(userId).collection("achievements")
+        
+        db.collection("users").document(userId).collection("dailyLogs")
+            .order(by: "date", descending: true)
+            .getDocuments { [weak self] snapshot, error in
+                guard let self = self,
+                      let documents = snapshot?.documents else { return }
+                
+                let logs = documents.compactMap { try? $0.data(as: DailyLog.self) }
+                
+                self.checkStreakAchievements(logs: logs, collection: achievementsCollection, batch: batch)
+                self.updateCheckCompletionAchievements(logs: logs, collection: achievementsCollection, batch: batch)
+                self.checkProgressAchievements(logs: logs, collection: achievementsCollection, batch: batch)
+                self.checkTimeBasedAchievements(logs: logs, collection: achievementsCollection, batch: batch)
+                self.updateCheckSpecialAchievements(logs: logs, collection: achievementsCollection, batch: batch)
+                
+                batch.commit { error in
+                    if let error = error {
+                        print("Error updating achievements: \(error)")
+                    } else {
+                        self.loadAchievements()
+                    }
+                }
+            }
+    }
     
     // Checks a user's streak achievements based on requirement
     private func checkStreakAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
@@ -355,190 +539,6 @@ class ProfileViewModel: ObservableObject {
                 }
             }
         }
-    }
-    
-    private func checkProgressAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
-        // Getting Started - Track your first goal
-        if !logs.isEmpty {
-            unlockAchievement(title: "Getting Started", collection: collection, batch: batch)
-        }
-        
-        // Progress Pioneer - Reach 50% completion on all goals
-        let daysWithAllGoals50Percent = logs.filter { log in
-            log.totalProgress >= 0.5
-        }.count
-        
-        if daysWithAllGoals50Percent > 0 {
-            unlockAchievement(title: "Progress Pioneer", collection: collection, batch: batch)
-        }
-        
-        // Consistency King - Maintain 80% completion for a week
-        var consecutiveDaysOver80 = 0
-        var maxConsecutiveDaysOver80 = 0
-        let calendar = Calendar.current
-        var previousDate: Date?
-        
-        for log in logs {
-            let currentDate = calendar.startOfDay(for: log.date.dateValue())
-            
-            if log.totalProgress >= 0.8 {
-                if let prevDate = previousDate {
-                    let daysBetween = calendar.dateComponents([.day], from: currentDate, to: prevDate).day ?? 0
-                    if daysBetween == 1 {
-                        consecutiveDaysOver80 += 1
-                    } else {
-                        consecutiveDaysOver80 = 1
-                    }
-                } else {
-                    consecutiveDaysOver80 = 1
-                }
-                maxConsecutiveDaysOver80 = max(maxConsecutiveDaysOver80, consecutiveDaysOver80)
-            } else {
-                consecutiveDaysOver80 = 0
-            }
-            previousDate = currentDate
-        }
-        
-        if maxConsecutiveDaysOver80 >= 7 {
-            unlockAchievement(title: "Consistency King", collection: collection, batch: batch)
-        }
-    }
-
-    private func updateCheckCompletionAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
-        let calendar = Calendar.current
-        let perfectDays = logs.filter { $0.totalProgress >= 1.0 }.count
-        
-        // Track consecutive perfect days
-        var consecutivePerfectDays = 0
-        var maxConsecutivePerfectDays = 0
-        var previousDate: Date?
-        
-        for log in logs {
-            let currentDate = calendar.startOfDay(for: log.date.dateValue())
-            
-            if log.totalProgress >= 1.0 {
-                if let prevDate = previousDate {
-                    let daysBetween = calendar.dateComponents([.day], from: currentDate, to: prevDate).day ?? 0
-                    if daysBetween == 1 {
-                        consecutivePerfectDays += 1
-                    } else {
-                        consecutivePerfectDays = 1
-                    }
-                } else {
-                    consecutivePerfectDays = 1
-                }
-                maxConsecutivePerfectDays = max(maxConsecutivePerfectDays, consecutivePerfectDays)
-            } else {
-                consecutivePerfectDays = 0
-            }
-            previousDate = currentDate
-        }
-        
-        // Perfect Day
-        if perfectDays > 0 {
-            unlockAchievement(title: "Perfect Day", collection: collection, batch: batch)
-        }
-        
-        // Perfect Week
-        if maxConsecutivePerfectDays >= 7 {
-            unlockAchievement(title: "Perfect Week", collection: collection, batch: batch)
-        }
-        
-        // Goal Crusher & Century Club
-        // Using totalProgress as an indicator of completed goals
-        // Assuming a progress of 1.0 means all goals for that day were completed
-        let totalCompletedDays = logs.filter { $0.totalProgress >= 1.0 }.count
-        
-        if totalCompletedDays >= 50 {
-            unlockAchievement(title: "Goal Crusher", collection: collection, batch: batch)
-        }
-        
-        if totalCompletedDays >= 100 {
-            unlockAchievement(title: "Century Club", collection: collection, batch: batch)
-        }
-    }
-
-    private func updateCheckSpecialAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
-        let calendar = Calendar.current
-        
-        // Early Bird & Night Owl
-        for log in logs {
-            let date = log.date.dateValue()
-            let hour = calendar.component(.hour, from: date)
-            
-            if hour <= 8 {
-                unlockAchievement(title: "Early Bird", collection: collection, batch: batch)
-            }
-            
-            if hour >= 22 {
-                unlockAchievement(title: "Night Owl", collection: collection, batch: batch)
-            }
-        }
-        
-        // Weekend Warrior
-        var weekendPerfectDays = [Date: Bool]()
-        for log in logs {
-            let date = log.date.dateValue()
-            let weekday = calendar.component(.weekday, from: date)
-            
-            // Check if it's weekend (Saturday or Sunday)
-            if weekday == 1 || weekday == 7 {
-                if log.totalProgress >= 1.0 {
-                    weekendPerfectDays[calendar.startOfDay(for: date)] = true
-                }
-            }
-        }
-        
-        // Check if there are 8 weekend days (equivalent to a month of weekends)
-        if weekendPerfectDays.count >= 8 {
-            unlockAchievement(title: "Weekend Warrior", collection: collection, batch: batch)
-        }
-        
-        // Comeback King
-        if logs.count >= 2 {
-            for i in 0..<logs.count-1 {
-                let currentLogDate = logs[i].date.dateValue()
-                let previousLogDate = logs[i+1].date.dateValue()
-                
-                let daysBetween = calendar.dateComponents([.day], from: previousLogDate, to: currentLogDate).day ?? 0
-                
-                if daysBetween >= 7 {
-                    unlockAchievement(title: "Comeback King", collection: collection, batch: batch)
-                    break
-                }
-            }
-        }
-    }
-
-    // Update the checkAndUpdateAchievements function to use the new checks
-    private func checkAndUpdateAchievements() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        let batch = db.batch()
-        let achievementsCollection = db.collection("users").document(userId).collection("achievements")
-        
-        db.collection("users").document(userId).collection("dailyLogs")
-            .order(by: "date", descending: true)
-            .getDocuments { [weak self] snapshot, error in
-                guard let self = self,
-                      let documents = snapshot?.documents else { return }
-                
-                let logs = documents.compactMap { try? $0.data(as: DailyLog.self) }
-                
-                self.checkStreakAchievements(logs: logs, collection: achievementsCollection, batch: batch)
-                self.updateCheckCompletionAchievements(logs: logs, collection: achievementsCollection, batch: batch)
-                self.checkProgressAchievements(logs: logs, collection: achievementsCollection, batch: batch)
-                self.checkTimeBasedAchievements(logs: logs, collection: achievementsCollection, batch: batch)
-                self.updateCheckSpecialAchievements(logs: logs, collection: achievementsCollection, batch: batch)
-                
-                batch.commit { error in
-                    if let error = error {
-                        print("Error updating achievements: \(error)")
-                    } else {
-                        self.loadAchievements()
-                    }
-                }
-            }
     }
     
     // provides unlocked achievements
