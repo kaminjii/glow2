@@ -2,8 +2,8 @@ import SwiftUI
 
 // A view that displays an icon with a gradient background
 struct GradientIcon: View {
-    var iconName: String // The name of the SF Symbol icon to display
-
+    var iconName: String
+    
     var body: some View {
         ZStack {
             // Gradient background for the icon

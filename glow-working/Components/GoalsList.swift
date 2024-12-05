@@ -3,9 +3,9 @@ import FirebaseCore
 
 // View that displays a list of goals
 struct GoalsList: View {
-    @Binding var goals: [Goal] // Two-way binding to an array of Goal objects
+    @Binding var goals: [Goal]
     var onGoalSelected: (Goal) -> Void // Callback when a goal is selected
-    var showValue: Bool // Determines if the progress value should be displayed
+    var showValue: Bool
     
     var body: some View {
         // Iterate through the goals array using `ForEach`

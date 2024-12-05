@@ -2,31 +2,27 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
-// A view for displaying a goal card with options to edit or delete.
 struct GoalCard: View {
-    let goal: Goal  // The goal data to display.
-    let onEdit: () -> Void  // Callback for when the edit button is tapped.
-    let onDelete: () -> Void  // Callback for when the delete button is tapped.
+    let goal: Goal
+    let onEdit: () -> Void
+    let onDelete: () -> Void
     
     var body: some View {
         HStack {
-            // Display a gradient icon for the goal.
             GradientIcon(iconName: goal.icon)
             
-            // VStack to display the goal's name and details.
             VStack(alignment: .leading, spacing: 0) {
                 Text(goal.name)
                     .font(.headline)
-                    .foregroundStyle(.black1)  // Custom color for text.
+                    .foregroundStyle(.black1)
                 Text(goal.detail ?? "")
                     .font(.subheadline)
-                    .foregroundColor(.gray1)  // Gray color for details.
+                    .foregroundColor(.gray1)
             }
             .padding(.horizontal, 10)
             
             Spacer()
             
-            // Menu for options (Edit and Delete) with a button trigger.
             Menu {
                 Button("Edit", action: onEdit)
                 Button("Delete", role: .destructive, action: onDelete)
@@ -37,31 +33,30 @@ struct GoalCard: View {
             .frame(height: 50)
         }
         .padding()
-        .background(Color.white)  // Background color of the card.
-        .cornerRadius(16)  // Rounded corners for the card.
-        .shadow(color: .blackShadow, radius: 10, y: 5)  // Shadow effect.
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: .blackShadow, radius: 10, y: 5)
     }
 }
 
-// Main view for displaying and managing goals.
 struct GoalsView: View {
-    @Binding var selectedTab: Int  // The tab selected in the parent view.
-    @StateObject private var goalRepository = GoalRepository()  // A repository for managing goal data.
-    @State private var goals: [Goal] = []  // Array to hold the goals.
-    @State private var selectedGoal: Goal? = nil  // The goal selected for editing or deleting.
-    @State private var showDeleteAlert = false  // Boolean to control showing the delete confirmation alert.
-    @State private var showAddGoal = false  // Boolean to control showing the add goal view.
-    @State private var showEditGoal = false  // Boolean to control showing the edit goal view.
+    @Binding var selectedTab: Int
+    @StateObject private var goalRepository = GoalRepository()
+    @State private var goals: [Goal] = []
+    @State private var selectedGoal: Goal? = nil
+    @State private var showDeleteAlert = false
+    @State private var showAddGoal = false
+    @State private var showEditGoal = false
     
-    private let db = Firestore.firestore()  // Firestore database reference.
+    private let db = Firestore.firestore()
     
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.whitePrimary.edgesIgnoringSafeArea(.all)  // Background color for the view.
+                Color.whitePrimary.edgesIgnoringSafeArea(.all)
                 
                 VStack(spacing: 0) {
-                    // Header section with the title and an "Add Goal" button.
+                    // Header
                     HStack {
                         Text("Goals")
                             .font(.title3).bold()
@@ -72,29 +67,27 @@ struct GoalsView: View {
                         Button(action: { showAddGoal = true }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
-                                .foregroundStyle(.blue1)  // Color for the "Add" button.
+                                .foregroundStyle(.blue1)
                         }
                     }
                     .padding()
                     .background(Color.whitePrimary)
                     
-                    // Show an empty state view if there are no goals.
                     if goals.isEmpty {
                         emptyStateView
                     } else {
-                        // Scroll view for displaying the list of goals.
                         ScrollView {
                             VStack(spacing: 16) {
                                 ForEach(goals) { goal in
                                     GoalCard(
                                         goal: goal,
                                         onEdit: {
-                                            selectedGoal = goal  // Set the selected goal for editing.
-                                            showEditGoal = true  // Show the edit goal view.
+                                            selectedGoal = goal
+                                            showEditGoal = true
                                         },
                                         onDelete: {
-                                            selectedGoal = goal  // Set the selected goal for deletion.
-                                            showDeleteAlert = true  // Show the delete alert.
+                                            selectedGoal = goal
+                                            showDeleteAlert = true
                                         }
                                     )
                                 }
@@ -106,34 +99,30 @@ struct GoalsView: View {
             }
         }
         .sheet(isPresented: $showAddGoal) {
-            // Display the "ManageGoalView" for adding a new goal.
             ManageGoalView()
-                .onDisappear { fetchGoalsForToday() }  // Refresh the goals when the view disappears.
+                .onDisappear { fetchGoalsForToday() }
         }
         .sheet(isPresented: $showEditGoal) {
-            // Display the "ManageGoalView" for editing the selected goal.
             if let goal = selectedGoal {
                 ManageGoalView(isEditing: true, goal: goal)
-                    .onDisappear { fetchGoalsForToday() }  // Refresh the goals when the view disappears.
+                    .onDisappear { fetchGoalsForToday() }
             }
         }
         .alert("Delete Goal", isPresented: $showDeleteAlert) {
-            // Show a confirmation alert for deleting a goal.
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
                 if let goal = selectedGoal {
-                    deleteGoal(goal)  // Delete the selected goal.
+                    deleteGoal(goal)
                 }
             }
         } message: {
             Text("Are you sure you want to delete this goal? This action cannot be undone.")
         }
         .onAppear {
-            fetchGoalsForToday()  // Fetch goals when the view appears.
+            fetchGoalsForToday()
         }
     }
     
-    // View shown when there are no goals in the list.
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             Image(systemName: "star.circle")
@@ -161,14 +150,13 @@ struct GoalsView: View {
                             endPoint: .trailing
                         )
                     )
-                    .cornerRadius(25)  // Rounded corners for the button.
+                    .cornerRadius(25)
             }
             .padding(.top)
         }
         .frame(maxHeight: .infinity)
     }
     
-    // Fetch the goals for today from Firestore.
     private func fetchGoalsForToday() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -185,7 +173,6 @@ struct GoalsView: View {
             }
     }
     
-    // Mark a goal as deleted in Firestore.
     private func deleteGoal(_ goal: Goal) {
         guard let userId = Auth.auth().currentUser?.uid,
               let goalId = goal.id else { return }
@@ -194,7 +181,7 @@ struct GoalsView: View {
             .document(goalId)
             .updateData(["deleted": true]) { error in
                 if error == nil {
-                    fetchGoalsForToday()  // Refresh the goals after deletion.
+                    fetchGoalsForToday()
                 }
             }
     }

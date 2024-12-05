@@ -3,9 +3,9 @@ import FirebaseCore
 
 // View representing a single goal item in a list
 struct GoalItem: View {
-    @Binding var goal: Goal // Two-way binding to the `Goal` object for updates
+    @Binding var goal: Goal
     var onGoalSelected: (Goal) -> Void // Callback when the goal is selected
-    var showValue: Bool // Whether to display the goal's progress value
+    var showValue: Bool
 
     init(goal: Binding<Goal>, onGoalSelected: @escaping (Goal) -> Void, showValue: Bool = true) {
         self._goal = goal
