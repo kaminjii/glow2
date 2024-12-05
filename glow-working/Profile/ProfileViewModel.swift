@@ -9,15 +9,16 @@ import SwiftUI
 import FirebaseAuth
 import FirebaseFirestore
 
+// Manages user profile data and logic, such as achievements, profile updates, and activity metrics
 class ProfileViewModel: ObservableObject {
-    @Published var fullName = ""
-    @Published var email = ""
-    @Published var showEditProfile = false
-    @Published var showChangePassword = false
-    @Published var achievements: [Achievement] = []
-    @Published var recordedDays = 0
-    @Published var streak = 0
-    
+    // Published properties to store and update UI-related data
+    @Published var fullName = "" // user's name
+    @Published var email = "" // user's email
+    @Published var showEditProfile = false // toggles edit profile view
+    @Published var showChangePassword = false // toggles change password view
+    @Published var achievements: [Achievement] = [] // list of all user achievements
+    @Published var recordedDays = 0 // total number of days user has logged activity
+    @Published var streak = 0 // current streak of consecutive logged activity days
     @Published var showReauthDialog = false
     @Published var deleteError: String?
     @Published var reauthPassword = ""
@@ -29,14 +30,17 @@ class ProfileViewModel: ObservableObject {
         return "star3"
     }
     
+    // Calculates number of achievements user has unlocked
     var unlockedAchievements: Int {
         achievements.filter { $0.isUnlocked }.count
     }
     
+    // Returns number of possible achievements available
     var totalAchievements: Int {
         AchievementManager.achievements.count
     }
     
+    // Initializes the ViewModel and loads user data, achievements, and stats
     init() {
         loadUserData()
         loadAchievements()
@@ -44,31 +48,37 @@ class ProfileViewModel: ObservableObject {
         checkAndUpdateAchievements()
     }
     
+    // Loads the user's profile data from Firestore and updates the ViewModel.
     func loadUserData() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return } // Ensure user is logged in
         
+        // Fetch user document from Firestore
         db.collection("users").document(userId).getDocument { [weak self] document, error in
             guard let self = self,
                   let data = document?.data() else { return }
             
             DispatchQueue.main.async {
-                self.fullName = data["fullName"] as? String ?? ""
-                self.email = data["email"] as? String ?? ""
+                self.fullName = data["fullName"] as? String ?? "" // Update full name
+                self.email = data["email"] as? String ?? "" // Update email
             }
         }
     }
     
+    // Loads all available achievements and updates their unlocked status based on Firestore data.
     func loadAchievements() {
-        self.achievements = AchievementManager.achievements
+        self.achievements = AchievementManager.achievements // Load predefined achievements
         
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return } // Ensure user is logged in
         
+        // Fetch unlocked achievements from Firestore
         db.collection("users").document(userId).collection("achievements")
             .getDocuments { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 
+                // Create a set of titles of unlocked achievements
                 let unlockedTitles = Set(documents.compactMap { $0["title"] as? String })
                 
+                // Update the unlocked status for achievements
                 DispatchQueue.main.async {
                     self?.achievements = self?.achievements.map { achievement in
                         var updatedAchievement = achievement
@@ -79,13 +89,14 @@ class ProfileViewModel: ObservableObject {
             }
     }
     
+    // Calculates user's activity statistics such as recorded days and streak.
     private func calculateStats() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return } // Ensure user is logged in
         
         // Calculate recorded days
         db.collection("users").document(userId).collection("dailyLogs")
             .getDocuments { [weak self] snapshot, error in
-                let count = snapshot?.documents.count ?? 0
+                let count = snapshot?.documents.count ?? 0 // Count total logs
                 DispatchQueue.main.async {
                     self?.recordedDays = count
                 }
@@ -95,12 +106,14 @@ class ProfileViewModel: ObservableObject {
         calculateStreak()
     }
     
+    // Calculates the user's current streak of consecutive logged activity days.
     private func calculateStreak() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return } // Ensure user is logged in
         
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         
+        // Fetch daily logs sorted by date in descending order
         db.collection("users").document(userId).collection("dailyLogs")
             .order(by: "date", descending: true)
             .getDocuments { [weak self] snapshot, error in
@@ -117,7 +130,7 @@ class ProfileViewModel: ObservableObject {
                         currentStreak += 1
                         currentDate = calendar.date(byAdding: .day, value: -1, to: currentDate) ?? currentDate
                     } else {
-                        break
+                        break // Streak is broken
                     }
                 }
                 
@@ -127,8 +140,9 @@ class ProfileViewModel: ObservableObject {
             }
     }
     
+    // Updates the user's profile data in Firestore.
     func updateProfile() async {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return } // Ensure user is logged in
         
         let data: [String: Any] = [
             "fullName": fullName,
@@ -136,25 +150,28 @@ class ProfileViewModel: ObservableObject {
         ]
         
         do {
+            // Save updated profile data to Firestore
             try await db.collection("users").document(userId).setData(data, merge: true)
         } catch {
             print("Failed to update profile: \(error.localizedDescription)")
         }
     }
     
+    // Updates the user's password in Firebase Auth.
     func updatePassword(currentPassword: String, newPassword: String) async {
-        guard let user = Auth.auth().currentUser else { return }
+        guard let user = Auth.auth().currentUser else { return } // Ensure user is logged in
         
         // Reauthenticate user
         let credential = EmailAuthProvider.credential(withEmail: user.email ?? "", password: currentPassword)
         do {
-            try await user.reauthenticate(with: credential)
-            try await user.updatePassword(to: newPassword)
+            try await user.reauthenticate(with: credential) // Reauthenticate user
+            try await user.updatePassword(to: newPassword) // Update password
         } catch {
             print("Error updating password: \(error.localizedDescription)")
         }
     }
     
+    // Deletes the user's account and Firestore data.
     func deleteAccount() {
         // Show re-authentication dialog
         showReauthDialog = true
@@ -209,10 +226,12 @@ class ProfileViewModel: ObservableObject {
     
     // MARK: - Achievement Logic
     
+    // Refreshes the user's achievements by rechecking criteria.
     func refreshAchievements() {
         checkAndUpdateAchievements()
     }
     
+    // Checks a user's streak achievements based on requirement
     private func checkStreakAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -244,6 +263,7 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Checks a user's completion achievements based on requirements
     private func checkCompletionAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
         let perfectDays = logs.filter { $0.totalProgress >= 1.0 }.count
         
@@ -280,6 +300,7 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Checks a user's time-based achievements based on requirements
     private func checkTimeBasedAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
         guard let firstLog = logs.last else { return }
         
@@ -302,6 +323,7 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Checks a user's special achievements based on requirements
     private func checkSpecialAchievements(logs: [DailyLog], collection: CollectionReference, batch: WriteBatch) {
         let calendar = Calendar.current
         
@@ -519,6 +541,7 @@ class ProfileViewModel: ObservableObject {
             }
     }
     
+    // provides unlocked achievements
     private func unlockAchievement(title: String, collection: CollectionReference, batch: WriteBatch) {
         let achievementDoc = collection.document(title)
         
@@ -553,6 +576,7 @@ struct UserAchievement: Codable {
     let type: String
 }
 
+// Provides pre-defined achievements for App
 struct AchievementManager {
     static let achievements = [
         // Streak Achievements
