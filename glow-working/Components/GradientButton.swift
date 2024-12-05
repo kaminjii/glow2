@@ -2,9 +2,9 @@ import SwiftUI
 
 // A custom button view with gradient background and state-dependent styling
 struct GradientButton: View {
-    var title: String
-    var action: () -> Void
-    var isEnabled: Bool
+    var title: String // The title text for the button
+    var action: () -> Void // The action to execute when the button is tapped
+    var isEnabled: Bool // Determines if the button is active or disabled
     
     var body: some View {
         Button(action: {

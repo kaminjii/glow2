@@ -3,16 +3,17 @@ import FirebaseFirestore
 
 
 struct CalendarCell: View {
-    @EnvironmentObject var dateHolder: DateHolder
-    let count: Int              // Position in the calendar grid (1-42)
-    let startingSpaces: Int     // Days from previous month in first week
-    let daysInMonth: Int
-    let daysInPrevMonth: Int
-    var dailyLog: DailyLog? // Passed from parent, specific to this cell
-    var onTap: (DailyLog?) -> Void
+    @EnvironmentObject var dateHolder: DateHolder // Shared date state across the app
+    let count: Int // The cell's index within the calendar
+    let startingSpaces: Int // Number of empty spaces at the start of the month grid
+    let daysInMonth: Int // Total number of days in the current month
+    let daysInPrevMonth: Int // Total days in the previous month
+    var dailyLog: DailyLog? // Optional log data specific to this cell
+    var onTap: (DailyLog?) -> Void // Callback when the cell is tapped
 
     var body: some View {
-        let (month, _) = monthStruct() // Calculate which month this cell belongs to and its date
+        let (month, _) = monthStruct() // Determine the month and date for this cell
+
 
         VStack {
             if month.monthType == .Current {

@@ -2,18 +2,22 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+// The main view where users can select goals from a predefined list or add their own custom goals.
 struct SelectTemplateGoalsView: View {
-    @State private var done: Bool = false
-    @State private var showAddGoal: Bool = false
-    @State private var selectedGoals: Set<Int> = []
-    @State private var isProcessing: Bool = false
-    @State private var animate = false
-    @State private var showError = false
-    @State private var errorMessage = ""
-    @State private var customGoals: [TemplateGoal] = []
+    // State variables for managing the view's UI and logic.
+    @State private var done: Bool = false // To navigate to the next view when the process is complete.
+    @State private var showAddGoal: Bool = false // To show the modal for adding a custom goal.
+    @State private var selectedGoals: Set<Int> = [] // To keep track of selected goal indices.
+    @State private var isProcessing: Bool = false // To indicate processing state.
+    @State private var animate = false // For animation control.
+    @State private var showError = false // To show an error alert.
+    @State private var errorMessage = "" // The message to display in case of an error.
+    @State private var customGoals: [TemplateGoal] = [] // Array to store custom user-added goals.
     
+    // Injecting the AuthenticationViewModel for managing authentication state.
     @EnvironmentObject var viewModel: AuthenticationViewModel
     
+    // Sample predefined template goals for the user to choose from.
     let templateGoals: [TemplateGoal] = [
         TemplateGoal(
             iconName: "figure.run",
@@ -44,65 +48,71 @@ struct SelectTemplateGoalsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Background animation view.
                 AnimatedStarField()
                 
+                // ScrollView to display the content.
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
-                        welcomeSection
-                        goalGrid
+                        welcomeSection // Welcome section with title and description.
+                        goalGrid // Grid of predefined template goals.
                         
-                        // Custom goals grid
+                        // Custom goals grid, displayed if there are custom goals.
                         if !customGoals.isEmpty {
                             LazyVGrid(columns: [
                                 GridItem(.flexible(), spacing: 16),
                                 GridItem(.flexible(), spacing: 16)
                             ], spacing: 16) {
                                 ForEach(customGoals.indices, id: \.self) { index in
-                                    let adjustedIndex = templateGoals.count + index
+                                    let adjustedIndex = templateGoals.count + index // Adjusted index for custom goals.
                                     TemplateGoalCard(
                                         goal: customGoals[index],
                                         isSelected: selectedGoals.contains(adjustedIndex)
                                     ) {
+                                        // Toggle the selection state of the custom goal.
                                         if selectedGoals.contains(adjustedIndex) {
                                             selectedGoals.remove(adjustedIndex)
                                         } else {
                                             selectedGoals.insert(adjustedIndex)
                                         }
                                     }
-                                    .opacity(animate ? 1 : 0)
-                                    .offset(y: animate ? 0 : 20)
+                                    .opacity(animate ? 1 : 0) // Animation effect for custom goals.
+                                    .offset(y: animate ? 0 : 20) // Animation effect for custom goals.
                                 }
                             }
                             .padding(.horizontal)
                         }
                         
-                        customGoalButton
-                        Spacer(minLength: 60)
+                        customGoalButton // Button to add a custom goal.
+                        Spacer(minLength: 60) // Spacer to separate content and continue button.
                     }
                 }
                 
+                // Continue button section, which is displayed at the bottom of the screen.
                 VStack {
                     Spacer()
                     continueButton
                 }
             }
             .navigationDestination(isPresented: $done) {
-                ContentView()
+                ContentView() // Navigate to the next view when done.
             }
         }
+        // Modal sheet for adding custom goals.
         .sheet(isPresented: $showAddGoal) {
             AddGoalModal { newGoal in
-                // Add the new goal to customGoals array
+                // Add the new goal to the customGoals array and automatically select it.
                 customGoals.append(newGoal)
-                // Automatically select the new goal
                 selectedGoals.insert(templateGoals.count + customGoals.count - 1)
             }
         }
+        // Alert for displaying errors.
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
         }
+        // Animation trigger when the view appears.
         .onAppear {
             withAnimation(.spring(duration: 1.0)) {
                 animate = true
@@ -110,13 +120,14 @@ struct SelectTemplateGoalsView: View {
         }
     }
     
+    // View for the welcome section with logo and introductory text.
     private var welcomeSection: some View {
         VStack(spacing: 16) {
             Image("glowLogoYellow")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 80, height: 80)
-                .scaleEffect(animate ? 1 : 0.5)
+                .scaleEffect(animate ? 1 : 0.5) // Animation for logo.
             
             VStack(spacing: 8) {
                 Text("Choose Your Goals")
@@ -136,6 +147,7 @@ struct SelectTemplateGoalsView: View {
         .padding(.top, 40)
     }
     
+    // View for displaying the grid of predefined template goals.
     private var goalGrid: some View {
         LazyVGrid(columns: [
             GridItem(.flexible(), spacing: 16),
@@ -146,19 +158,21 @@ struct SelectTemplateGoalsView: View {
                     goal: templateGoals[index],
                     isSelected: selectedGoals.contains(index)
                 ) {
+                    // Toggle the selection state of the template goal.
                     if selectedGoals.contains(index) {
                         selectedGoals.remove(index)
                     } else {
                         selectedGoals.insert(index)
                     }
                 }
-                .opacity(animate ? 1 : 0)
-                .offset(y: animate ? 0 : 20)
+                .opacity(animate ? 1 : 0) // Animation effect for template goals.
+                .offset(y: animate ? 0 : 20) // Animation effect for template goals.
             }
         }
         .padding(.horizontal)
     }
     
+    // View for the button to add a custom goal.
     private var customGoalButton: some View {
         Button(action: { showAddGoal = true }) {
             HStack {
@@ -173,15 +187,16 @@ struct SelectTemplateGoalsView: View {
             .cornerRadius(12)
         }
         .padding(.horizontal)
-        .opacity(animate ? 1 : 0)
+        .opacity(animate ? 1 : 0) // Animation effect for custom goal button.
     }
     
+    // View for the continue button at the bottom.
     private var continueButton: some View {
         VStack {
             if isProcessing {
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle(tint: .gray))
-                    .scaleEffect(1.2)
+                    .scaleEffect(1.2) // Scaling effect for the progress view.
             } else {
                 GradientButton(
                     title: "Continue",
@@ -191,25 +206,29 @@ struct SelectTemplateGoalsView: View {
             }
         }
         .padding()
-        .background(.whitePrimary)
+        .background(.whitePrimary) // Background color for the button.
     }
     
+    // Function to handle the continue button action.
     private func handleContinue() {
+        // Ensure that at least one goal is selected before proceeding.
         guard !selectedGoals.isEmpty else {
             errorMessage = "Please select at least one goal"
             showError = true
             return
         }
         
-        isProcessing = true
+        isProcessing = true // Indicate that processing is in progress.
         Task {
             do {
+                // Attempt to add selected goals to Firestore.
                 try await addSelectedGoalsToFirestore()
                 DispatchQueue.main.async {
                     isProcessing = false
-                    done = true
+                    done = true // Navigate to the next view upon success.
                 }
             } catch {
+                // Handle any errors during the Firestore operation.
                 DispatchQueue.main.async {
                     isProcessing = false
                     errorMessage = "Failed to save goals. Please try again."
@@ -219,6 +238,7 @@ struct SelectTemplateGoalsView: View {
         }
     }
     
+    // Function to get the details for a specific goal based on its title.
     private func getGoalDetails(for title: String) -> (unit: String, quantityGoal: Double) {
         switch title.lowercased() {
         case "exercise":
@@ -234,6 +254,7 @@ struct SelectTemplateGoalsView: View {
         }
     }
     
+    // Function to add selected goals to Firestore.
     private func addSelectedGoalsToFirestore() async throws {
         guard let userId = Auth.auth().currentUser?.uid else {
             throw NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "No authenticated user found"])
@@ -247,58 +268,20 @@ struct SelectTemplateGoalsView: View {
             if index < templateGoals.count {
                 goal = templateGoals[index]
             } else {
-                let customIndex = index - templateGoals.count
-                goal = customGoals[customIndex]
+                goal = customGoals[index - templateGoals.count]
             }
             
-            let (unit, quantityGoal) = getGoalDetails(for: goal.title)
-            
-            let goalData: [String: Any] = [
-                "date": Timestamp(date: Date()),
-                "deleted": false,
-                "detail": goal.description,
-                "icon": goal.iconName,
-                "name": goal.title,
-                "quantityComplete": 0.0,
-                "quantityGoal": quantityGoal,
-                "unit": unit
+            // Store each selected goal in Firestore.
+            let goalDetails = getGoalDetails(for: goal.title)
+            let data: [String: Any] = [
+                "title": goal.title,
+                "iconName": goal.iconName,
+                "unit": goalDetails.unit,
+                "quantityGoal": goalDetails.quantityGoal,
+                "createdAt": Timestamp(date: Date())
             ]
             
-            _ = try await goalsCollection.addDocument(data: goalData)
-        }
-        
-        await viewModel.completeOnboarding()
-    }
-}
-
-struct TemplateGoalCard: View {
-    let goal: TemplateGoal
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 12) {
-                Image(systemName: goal.iconName)
-                    .font(.system(size: 30))
-                    .foregroundColor(isSelected ? .white : .blue1)
-                
-                Text(goal.title)
-                    .font(.headline)
-                    .foregroundColor(isSelected ? .white : .primary)
-                
-                Text(goal.description)
-                    .font(.caption)
-                    .foregroundColor(isSelected ? .white.opacity(0.8) : .gray1)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            }
-            .frame(height: 140)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(isSelected ? Color.blue1 : Color.white)
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+            try await goalsCollection.addDocument(data: data)
         }
     }
 }

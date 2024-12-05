@@ -2,30 +2,33 @@ import SwiftUI
 import SymbolPicker
 import FirebaseAuth
 
+// Main View for adding a new goal
 struct AddGoalModal: View {
-    let units = [
-        "Distance": ["kilometers", "meters", "miles", "yards"],
-        "Time": ["hours", "minutes"],
-        "Count": ["repetitions", "sets", "times"],
-        "Weight": ["kilograms", "pounds"],
-        "Other": ["pages", "meals", "tasks"]
-    ]
-    
-    @Environment(\.dismiss) private var dismiss
-    @State private var icon: String = "star.fill"
-    @State private var iconPickerPresented = false
-    @State private var goalName: String = ""
-    @State private var goalDescription: String = ""
-    @State private var goalUnit: String = ""
-    @State private var quantity: String = ""
-    @State private var showUnitSheet = false
-    @State private var selectedCategory: String?
-    
-    let onAddGoal: (TemplateGoal) -> Void
+    // Units for different measurement categories
+     let units = [
+         "Distance": ["kilometers", "meters", "miles", "yards"],
+         "Time": ["hours", "minutes"],
+         "Count": ["repetitions", "sets", "times"],
+         "Weight": ["kilograms", "pounds"],
+         "Other": ["pages", "meals", "tasks"]
+     ]
+     
+     @Environment(\.dismiss) private var dismiss // Dismiss the modal
+     @State private var icon: String = "star.fill" // Default icon for the goal
+     @State private var iconPickerPresented = false // Toggles icon picker sheet
+     @State private var goalName: String = "" // Goal name input
+     @State private var goalDescription: String = "" // Optional goal description
+     @State private var goalUnit: String = "" // Measurement unit for the goal
+     @State private var quantity: String = "" // Target quantity
+     @State private var showUnitSheet = false // Toggles unit selection sheet
+     @State private var selectedCategory: String? // Currently selected unit category
+     
+     let onAddGoal: (TemplateGoal) -> Void // Callback to handle goal saving
 
-    var formIsValid: Bool {
-        !goalName.isEmpty && !goalUnit.isEmpty && !quantity.isEmpty
-    }
+     // Form validation logic
+     var formIsValid: Bool {
+         !goalName.isEmpty && !goalUnit.isEmpty && !quantity.isEmpty
+     }
 
     var body: some View {
         NavigationStack {
@@ -50,6 +53,7 @@ struct AddGoalModal: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            // Navigation bar
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -68,6 +72,7 @@ struct AddGoalModal: View {
                         .font(.headline)
                 }
             }
+            // Icon picker sheet
             .sheet(isPresented: $iconPickerPresented) {
                 NavigationStack {
                     SymbolPicker(symbol: $icon)
@@ -81,11 +86,13 @@ struct AddGoalModal: View {
                             }
                         }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.medium, .large]) // Control sheet size
             }
         }
     }
 
+    
+    // Icon selection UI
     private var iconSection: some View {
         VStack(spacing: 16) {
             Button(action: { iconPickerPresented = true }) {
@@ -109,6 +116,7 @@ struct AddGoalModal: View {
         .frame(maxWidth: .infinity)
     }
 
+    // Goal details input UI
     private var goalDetailsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
@@ -135,6 +143,7 @@ struct AddGoalModal: View {
         }
     }
 
+    // Unit selection UI
     private var measurementSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Unit")
@@ -170,6 +179,7 @@ struct AddGoalModal: View {
         }
     }
 
+    // Target input UI
     private var targetSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Daily Target")
@@ -190,6 +200,7 @@ struct AddGoalModal: View {
         }
     }
     
+    // Save goal action
     private func saveGoal() {
         let newGoal = TemplateGoal(
             iconName: icon,
@@ -199,49 +210,6 @@ struct AddGoalModal: View {
         )
         onAddGoal(newGoal)
         dismiss()
-    }
-}
-
-struct UnitSelectionView: View {
-    @Binding var selectedUnit: String
-    let units: [String: [String]]
-    let dismiss: () -> Void
-    
-    var body: some View {
-        ZStack {
-            Color.whitePrimary.ignoresSafeArea()
-            
-            List {
-                ForEach(Array(units.keys).sorted(), id: \.self) { category in
-                    Section(category) {
-                        ForEach(units[category] ?? [], id: \.self) { unit in
-                            Button(action: {
-                                selectedUnit = unit
-                                dismiss()
-                            }) {
-                                HStack {
-                                    Text(unit)
-                                    Spacer()
-                                    if selectedUnit == unit {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.blue1)
-                                    }
-                                }
-                            }
-                            .foregroundStyle(.black1)
-                        }
-                    }
-                }
-            }
-            .scrollContentBackground(.hidden)
-        }
-        .navigationTitle("Choose Unit")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }
-            }
-        }
     }
 }
 

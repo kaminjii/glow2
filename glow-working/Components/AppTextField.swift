@@ -2,12 +2,12 @@ import SwiftUI
 
 // A reusable view representing a customizable text field with an icon
 struct AppTextField: View {
-    var icon: String
-    var placeholder: String
-    var isSecure: Bool = false // Indicates whether the field should obscure input (e.g., for passwords)
-    @Binding var label: String
-    
-    @FocusState private var isFocused: Bool
+    var icon: String // System icon name to display next to the text field
+   var placeholder: String // Placeholder text when the field is empty
+   var isSecure: Bool = false // Indicates whether the field should obscure input (e.g., for passwords)
+   @Binding var label: String // Two-way binding for the text field value
+   
+   @FocusState private var isFocused: Bool // State variable to manage focus on the text field
     
     var body: some View {
         HStack {

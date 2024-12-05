@@ -9,37 +9,39 @@ import Foundation
 import FirebaseAuth
 import FirebaseFirestore
 
+// Enum to represent the authentication state of the user
 enum AuthenticationState {
     case unauthenticated
     case authenticating
     case authenticated
 }
 
+// Enum to represent the current flow (login or sign-up)
 enum AuthenticationFlow {
     case login
     case signUp
 }
 
-@MainActor
 class AuthenticationViewModel: ObservableObject {
-    @Published var email: String = ""
-    @Published var password: String = ""
-    @Published var confirmPassword: String = ""
-    @Published var fullName: String = ""
+    @Published var email: String = "" // User's email
+    @Published var password: String = "" // User's password
+    @Published var confirmPassword: String = "" // User's password confirmation
+    @Published var fullName: String = "" // User's full name
     
-    @Published var flow: AuthenticationFlow = .login
+    @Published var flow: AuthenticationFlow = .login // Current flow (login or sign-up)
     
-    @Published var isValid: Bool  = false
-    @Published var authenticationState: AuthenticationState = .unauthenticated
-    @Published var user: User?
-    @Published var errorMessage: String = ""
-    @Published var displayName: String = ""
-    @Published var hasCompletedOnboarding: Bool = false
-
+    @Published var isValid: Bool  = false // Flag to indicate if the input fields are valid
+    @Published var authenticationState: AuthenticationState = .unauthenticated // Current authentication state
+    @Published var user: User? // Authenticated user
+    @Published var errorMessage: String = "" // Error message for authentication issues
+    @Published var displayName: String = "" // User's display name
+    @Published var hasCompletedOnboarding: Bool = false // Flag indicating onboarding status
     
+    // Initializer to set up state handlers and bindings
     init() {
         registerAuthStateHandler()
         
+        // Combine input fields to set `isValid` based on flow type
         $flow
             .combineLatest($email, $password, $confirmPassword)
             .map { flow, email, password, confirmPassword in
@@ -50,6 +52,7 @@ class AuthenticationViewModel: ObservableObject {
             .assign(to: &$isValid)
     }
     
+    // Function to register an authentication state handler to listen for changes in user authentication
     func registerAuthStateHandler() {
            Auth.auth().addStateDidChangeListener { [weak self] auth, user in
                guard let self = self else { return }
@@ -74,6 +77,7 @@ class AuthenticationViewModel: ObservableObject {
                            }
                        }
                    } else {
+                       // When there is no user signed in, reset relevant properties
                        DispatchQueue.main.async {
                            self.user = nil
                            self.hasCompletedOnboarding = false
@@ -84,6 +88,7 @@ class AuthenticationViewModel: ObservableObject {
            }
        }
        
+    // Function to mark onboarding as complete and update Firestore
        func completeOnboarding() async {
            guard let userId = user?.uid else { return }
            let db = Firestore.firestore()
@@ -99,11 +104,13 @@ class AuthenticationViewModel: ObservableObject {
            }
        }
     
+    // Function to toggle between login and sign-up flow
     func switchFlow() {
         flow = flow == .login ? .signUp : .login
         errorMessage = ""
     }
     
+    // Helper function for simulating a wait (used for testing)
     private func wait() async {
         do {
             print("Wait")
@@ -113,6 +120,7 @@ class AuthenticationViewModel: ObservableObject {
         catch { }
     }
     
+    // Function to reset the view model's properties
     func reset() {
         flow = .login
         email = ""
@@ -125,6 +133,7 @@ class AuthenticationViewModel: ObservableObject {
 // MARK: - Email and Password Authentication
 
 extension AuthenticationViewModel {
+    // Function to sign in with email and password
     func signInWithEmailPassword() async -> Bool {
         authenticationState = .authenticating
         
@@ -144,6 +153,7 @@ extension AuthenticationViewModel {
         }
     }
     
+    // Function to sign up with email, password, and full name
     func signUpWithEmailPassword(email: String, password: String, fullName: String) async -> Bool {
         authenticationState = .authenticating
         
@@ -152,6 +162,7 @@ extension AuthenticationViewModel {
             user = authResult.user
             print("User \(authResult.user.uid) signed up")
 
+            // Update the user's profile with their full name
             let changeRequest = user?.createProfileChangeRequest()
             changeRequest?.displayName = fullName
             try await changeRequest?.commitChanges()

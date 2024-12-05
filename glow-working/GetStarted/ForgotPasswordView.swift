@@ -8,16 +8,18 @@
 import SwiftUI
 import FirebaseAuth
 
+// A view that for password reset
 struct ForgotPasswordView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var email: String = ""
-    @State private var isLoading: Bool = false
-    @State private var showError: Bool = false
-    @State private var errorMessage: String = ""
-    @State private var showSuccess: Bool = false
-    @State private var animate = false
+    @Environment(\.dismiss) private var dismiss  // Used to dismiss the view programmatically.
+    @State private var email: String = ""  // State to hold the email entered by the user.
+    @State private var isLoading: Bool = false  // State to track the loading status when sending a reset request.
+    @State private var showError: Bool = false  // State to control the display of the error alert.
+    @State private var errorMessage: String = ""  // State to hold the error message for the alert.
+    @State private var showSuccess: Bool = false  // State to control the display of the success alert.
+    @State private var animate = false  // State to control animations for UI elements.
     
     private func resetPassword() {
+        // Validate the email input.
         guard !email.isEmpty else {
             errorMessage = "Please enter your email"
             showError = true
@@ -30,12 +32,14 @@ struct ForgotPasswordView: View {
             return
         }
         
-        isLoading = true
+        isLoading = true // Set loading to true when starting the password reset process.
         Task {
             do {
+                // Attempt to send the password reset email.
                 try await Auth.auth().sendPasswordReset(withEmail: email)
                 showSuccess = true
             } catch let error as NSError {
+                // Handle different error cases.
                 switch error.code {
                 case AuthErrorCode.invalidEmail.rawValue:
                     errorMessage = "Invalid email format"
@@ -92,27 +96,29 @@ struct ForgotPasswordView: View {
                             placeholder: "Enter your email",
                             label: $email
                         )
-                        .textInputAutocapitalization(.never)
-                        .keyboardType(.emailAddress)
-                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)  // Disable auto-capitalization for email input.
+                        .keyboardType(.emailAddress)  // Set the keyboard type to email.
+                        .autocorrectionDisabled()  // Disable autocorrection for email input.
                     }
                     .padding(.horizontal)
-                    .opacity(animate ? 1 : 0)
-                    .offset(y: animate ? 0 : 20)
+                    .opacity(animate ? 1 : 0)  // Animate the opacity of the email input.
+                    .offset(y: animate ? 0 : 20)  // Animate the offset of the email input.
                     
-                    // Reset Button
+                    // Reset Button or Loading Indicator.
                     if isLoading {
+                        // Display a loading indicator while processing.
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle(tint: .gray))
                             .scaleEffect(1.2)
                     } else {
+                        // Display the reset button when not loading.
                         GradientButton(
                             title: "Send Reset Link",
                             action: resetPassword,
-                            isEnabled: !email.isEmpty
+                            isEnabled: !email.isEmpty  // Enable the button only if the email field is not empty.
                         )
-                        .opacity(animate ? 1 : 0)
-                        .offset(y: animate ? 0 : 20)
+                        .opacity(animate ? 1 : 0)  // Animate the opacity of the button.
+                        .offset(y: animate ? 0 : 20)  // Animate the offset of the button.
                     }
                     
                     Spacer(minLength: 30)
@@ -129,7 +135,7 @@ struct ForgotPasswordView: View {
         }
         .alert("Reset Link Sent", isPresented: $showSuccess) {
             Button("OK") {
-                dismiss()
+                dismiss() // Dismiss the view when the user acknowledges the success alert.
             }
         } message: {
             Text("Please check your email for instructions to reset your password.")

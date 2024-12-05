@@ -2,8 +2,8 @@ import SwiftUI
 
 // A view for editing a note with placeholder text
 struct NoteTextEditor: View {
-    @Binding var note: String
-    @Binding var originalNote: String
+    @Binding var note: String // The current note content
+    @Binding var originalNote: String // The original note content (useful for comparison or reset)
 
     var body: some View {
         ZStack(alignment: .topLeading) {
