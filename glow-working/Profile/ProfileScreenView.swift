@@ -22,20 +22,19 @@ struct ProfileScreenView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                Color.whitePrimary.ignoresSafeArea()
                 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 32) {
-                        profileHeader
-                        statsCard
-                        achievementsSection
-                        accountButtons
-                    }
-                    .padding(.horizontal)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 32) {
+                    profileHeader
+                    statsCard
+                    achievementsSection
+                    accountButtons
                 }
+                .padding(.horizontal)
             }
+            .padding(.top, 1)
         }
+        .background(Color.whitePrimary).edgesIgnoringSafeArea(.all)
         .alert("Delete Account", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) { viewModel.deleteAccount() }
@@ -53,7 +52,7 @@ struct ProfileScreenView: View {
                 .shadow(color: .blackShadow, radius: 10)
             
             VStack(spacing: 8) {
-                Text(viewModel.userName)
+                Text(viewModel.fullName)
                     .font(.title).bold()
                     .foregroundStyle(.black1)
                 

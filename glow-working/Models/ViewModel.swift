@@ -23,7 +23,7 @@ class ViewModel: ObservableObject {
         guard isAuthenticated else { return }
         
         dailyLogRepository.createDailyLog {
-            self.goalRepository.createDailyGoals {
+            self.goalRepository.createDailyGoals {_ in 
                 print("Daily log and goals setup complete.")
             }
         }

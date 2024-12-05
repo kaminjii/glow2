@@ -14,6 +14,7 @@ struct HomeScreenView: View {
     @State private var userName: String = ""
     @StateObject private var viewModel = ViewModel()
     @State private var starOffset: CGFloat = 0
+    @StateObject private var goalRepository = GoalRepository()
     
     private let db = Firestore.firestore()
     
@@ -36,15 +37,18 @@ struct HomeScreenView: View {
                                 .padding(.vertical)
                             progressSection
                             goalsList
+                            Spacer(minLength: 40)
                         }
                     }
+                    .padding(.top, 1)
                 }
                 .tabItem {
                     Image(systemName: "house.fill")
                 }
             }
-            .fullScreenCover(isPresented: $showTodaysProgress) {
+            .sheet(isPresented: $showTodaysProgress) {
                 TodaysProgressView(note: $note)
+                    .presentationDetents([.fraction(0.6), .large])
             }
             .sheet(item: $selectedGoal) { goal in
                 EditGoalProgressView(goal: .constant(goal)) {
@@ -53,9 +57,13 @@ struct HomeScreenView: View {
                 .presentationDetents([.fraction(0.5), .large])
             }
             .onAppear {
-                viewModel.setupDailyLogAndGoals()
                 fetchUserName()
-                fetchGoalsForToday()
+                // First create daily goals if needed, then fetch them
+                goalRepository.createDailyGoals { success in
+                    if success {
+                        fetchGoalsForToday()
+                    }
+                }
                 withAnimation(.easeInOut(duration: 2).repeatForever()) {
                     starOffset = -20
                 }
@@ -118,6 +126,7 @@ struct HomeScreenView: View {
                     .shadow(color: .blackShadow, radius: 10, y: 5)
             )
             .padding(.horizontal)
+            .padding(.bottom)
         }
     }
     

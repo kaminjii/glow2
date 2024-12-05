@@ -10,7 +10,7 @@ import FirebaseAuth
 import FirebaseFirestore
 
 class ProfileViewModel: ObservableObject {
-    @Published var userName = ""
+    @Published var fullName = ""
     @Published var email = ""
     @Published var showEditProfile = false
     @Published var showChangePassword = false
@@ -46,7 +46,7 @@ class ProfileViewModel: ObservableObject {
                   let data = document?.data() else { return }
             
             DispatchQueue.main.async {
-                self.userName = data["fullName"] as? String ?? ""
+                self.fullName = data["fullName"] as? String ?? ""
                 self.email = data["email"] as? String ?? ""
             }
         }
@@ -126,7 +126,7 @@ class ProfileViewModel: ObservableObject {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
         let data: [String: Any] = [
-            "userName": userName,
+            "fullName": fullName,
             "email": email
         ]
         

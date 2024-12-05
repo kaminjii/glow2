@@ -5,6 +5,7 @@ struct TodaysProgressView: View {
     @Environment(\.dismiss) var dismiss
     @Binding var note: String
     @State private var contentHeight: CGFloat = 0
+    @State private var localNote: String = ""  // Local state to manage note text
     
     var body: some View {
         NavigationStack {
@@ -15,10 +16,19 @@ struct TodaysProgressView: View {
                     VStack(spacing: 24) {
                         progressCard
                         noteSection
-                        photoSection
                         Spacer(minLength: 40)
                     }
                     .padding()
+                }
+                
+                // Loading overlay
+                if viewModel.isLoading {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .overlay(
+                            ProgressView()
+                                .tint(.white)
+                        )
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -30,6 +40,8 @@ struct TodaysProgressView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        viewModel.note = localNote  // Update viewModel with local note
+                        note = localNote  // Update parent view's note
                         viewModel.saveProgress()
                         dismiss()
                     }
@@ -40,16 +52,13 @@ struct TodaysProgressView: View {
                         .font(.headline)
                 }
             }
-            .sheet(isPresented: $viewModel.isPickerPresented) {
-                PhotoPicker(selectedImage: $viewModel.selectedImage)
-            }
         }
         .onAppear {
             viewModel.fetchTodayLog()
+            localNote = note  // Initialize local note with passed in note
         }
     }
     
-    // Progress card displaying overall progress percentage
     private var progressCard: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
@@ -82,48 +91,19 @@ struct TodaysProgressView: View {
         )
     }
     
-    
-    // Note-taking section
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Notes")
                 .font(.headline)
                 .foregroundStyle(.black1)
             
-            NoteTextEditor(note: $note, originalNote: $viewModel.note)
+            NoteTextEditor(note: $localNote, originalNote: .constant(""))  // Use localNote instead
                 .frame(minHeight: 120)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
                         .fill(Color.white)
                         .shadow(color: .blackShadow, radius: 10, y: 5)
                 )
-        }
-    }
-    
-    // Photo upload section
-    private var photoSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Photo")
-                .font(.headline)
-                .foregroundStyle(.black1)
-            
-            ImagePicker(
-                selectedImage: $viewModel.selectedImage,
-                isPickerPresented: $viewModel.isPickerPresented
-            )
-            .frame(minHeight: 220)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-                    .shadow(color: .blackShadow, radius: 10, y: 5)
-            )
-            
-            if viewModel.selectedImage == nil {
-                Text("Add a photo to track your progress")
-                    .font(.subheadline)
-                    .foregroundStyle(.gray1)
-                    .padding(.top, 4)
-            }
         }
     }
 }

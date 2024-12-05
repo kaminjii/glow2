@@ -1,5 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
+import FirebaseStorage
+import FirebaseAuth
 
 struct EditExistingDayView: View {
     @Environment(\.presentationMode) var presentationMode
@@ -15,6 +17,7 @@ struct EditExistingDayView: View {
     @State private var selectedImage: UIImage? = nil
     @State private var isPickerPresented = false
     @State private var progress: Double = 0
+    @State private var isLoading = false
     
     let date: Date
     var onSave: (DailyLog) -> Void
@@ -30,7 +33,6 @@ struct EditExistingDayView: View {
                             progressCard
                             goalsList
                             noteSection
-                            photoSection
                             Spacer(minLength: 40)
                         }
                     }
@@ -40,6 +42,16 @@ struct EditExistingDayView: View {
                             fetchDailyLog(for: date)
                             goalRepository.fetchGoals(for: date)
                         }
+                }
+                
+                // Global loading overlay
+                if isLoading {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .overlay(
+                            ProgressView()
+                                .tint(.white)
+                        )
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -70,7 +82,7 @@ struct EditExistingDayView: View {
             }
             .presentationDetents([.fraction(0.5), .large])
         }
-        .fullScreenCover(isPresented: $isPickerPresented) {
+        .sheet(isPresented: $isPickerPresented) {
             PhotoPicker(selectedImage: $selectedImage)
         }
         .onReceive(goalRepository.$goals) { fetchedGoals in
@@ -141,35 +153,44 @@ struct EditExistingDayView: View {
         .padding()
     }
     
-    private var photoSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Photo")
-                .font(.headline)
-                .foregroundStyle(.black1)
-            
-            ImagePicker(
-                selectedImage: $selectedImage,
-                isPickerPresented: $isPickerPresented
-            )
-            .frame(minHeight: 220)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
-                    .shadow(color: .blackShadow, radius: 10, y: 5)
-            )
-            
-            if selectedImage == nil {
-                Text("Add a photo to track your progress")
-                    .font(.subheadline)
-                    .foregroundStyle(.gray1)
-                    .padding(.top, 4)
+    // MARK: - Helper Functions
+        
+    private func saveChanges() {
+        guard let dailyLog = dailyLog else { return }
+        
+        isLoading = true
+        saveDailyLogChanges(dailyLog)
+    }
+
+    private func saveDailyLogChanges(_ dailyLog: DailyLog) {
+        var updatedLog = dailyLog
+        
+        // Update note if changed
+        if note != originalNote {
+            updatedLog.note = note
+        }
+        
+        // Call the onSave callback
+        onSave(updatedLog)
+        
+        // Update in Firestore
+        dailyLogRepository.updateDailyLog(updatedLog) { success in
+            DispatchQueue.main.async {
+                isLoading = false
+                if success {
+                    print("Daily log updated successfully")
+                    // Update goals after successful log update
+                    for goal in goalRepository.goals {
+                        updateGoal(goal)
+                    }
+                    presentationMode.wrappedValue.dismiss()
+                } else {
+                    print("Failed to update daily log")
+                    // You might want to show an error alert here
+                }
             }
         }
-        .padding()
-
     }
-    
-    // MARK: - Helper Functions
     
     private func formattedDate(for date: Date) -> String {
         let formatter = DateFormatter()
@@ -179,33 +200,6 @@ struct EditExistingDayView: View {
 
     private func updateGoal(_ updatedGoal: Goal) {
         goalRepository.updateGoal(updatedGoal)
-    }
-
-    private func saveChanges() {
-        if var dailyLog = dailyLog {
-            if note != originalNote {
-                dailyLog.note = note
-            }
-
-            onSave(dailyLog)
-            
-            dailyLogRepository.updateDailyLog(dailyLog) { success in
-                if success {
-                    print("Daily log updated successfully")
-                } else {
-                    print("Failed to update daily log")
-                }
-            }
-        }
-
-        for goal in goalRepository.goals {
-            updateGoal(goal)
-        }
-
-        fetchDailyLog(for: date)
-        goalRepository.fetchGoals(for: date)
-
-        presentationMode.wrappedValue.dismiss()
     }
 
     private func fetchDailyLog(for date: Date) {

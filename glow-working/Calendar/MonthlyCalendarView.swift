@@ -39,7 +39,9 @@ struct MonthlyCalendarView: View {
                         )
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding(.horizontal)
-                        .fullScreenCover(isPresented: $showEditDay) {
+                        .fullScreenCover(isPresented: $showEditDay, onDismiss: {
+                            fetchDailyLogs()  // Refresh data when sheet is dismissed
+                        }) {
                             EditExistingDayView(date: selectedDate.date.dateValue(), onSave: { updatedLog in
                                 self.selectedDate = updatedLog
                             })

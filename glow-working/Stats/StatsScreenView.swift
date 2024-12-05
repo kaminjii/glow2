@@ -31,6 +31,7 @@ struct StatsScreenView: View {
                 }
                 .padding(.horizontal)
             }
+            .padding(.top, 1)
             .background(Color.whitePrimary.edgesIgnoringSafeArea(.all))
             .onAppear {
                 viewModel.fetchStats()

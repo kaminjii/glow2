@@ -77,9 +77,9 @@ class GoalRepository: ObservableObject {
         }
     }
     
-    func createDailyGoals(completion: @escaping () -> Void) {
+    func createDailyGoals(completion: @escaping (Bool) -> Void) {
         guard let goalsCollection = getUserGoalsCollection() else {
-            completion()
+            completion(false)
             return
         }
         
@@ -88,6 +88,7 @@ class GoalRepository: ObservableObject {
         let todayStart = today
         let todayEnd = calendar.date(byAdding: .day, value: 1, to: today)!
         
+        // First check if goals already exist for today
         goalsCollection
             .whereField("date", isGreaterThan: Timestamp(date: todayStart))
             .whereField("date", isLessThan: Timestamp(date: todayEnd))
@@ -95,67 +96,103 @@ class GoalRepository: ObservableObject {
             .getDocuments { snapshot, error in
                 if let error = error {
                     print("Error fetching today's goals: \(error)")
-                    completion()
+                    completion(false)
                     return
                 }
                 
                 if let documents = snapshot?.documents, !documents.isEmpty {
                     print("Goals already exist for today. Skipping creation.")
-                    completion()
+                    completion(true)
                     return
                 }
                 
-                let previousStart = calendar.date(byAdding: .day, value: -1, to: today)!
-                let previousEnd = calendar.date(byAdding: .day, value: 0, to: today)!
-                
+                // First, get the most recent date that had goals
                 goalsCollection
-                    .whereField("date", isGreaterThan: Timestamp(date: previousStart))
-                    .whereField("date", isLessThan: Timestamp(date: previousEnd))
+                    .whereField("date", isLessThan: Timestamp(date: todayStart))
                     .whereField("deleted", isEqualTo: false)
+                    .order(by: "date", descending: true)
+                    .limit(to: 1)
                     .getDocuments { snapshot, error in
                         if let error = error {
-                            print("Error fetching goals: \(error)")
-                            completion()
+                            print("Error fetching most recent goal date: \(error)")
+                            completion(false)
                             return
                         }
                         
-                        guard let documents = snapshot?.documents else {
-                            completion()
+                        guard let mostRecentDoc = snapshot?.documents.first,
+                              let mostRecentDate = (mostRecentDoc.data()["date"] as? Timestamp)?.dateValue() else {
+                            completion(false)
                             return
                         }
                         
-                        for document in documents {
-                            let goalData = document.data()
-                            let newGoal = Goal(
-                                id: nil,
-                                date: Timestamp(date: Date()),
-                                deleted: false,
-                                detail: goalData["detail"] as? String ?? "",
-                                icon: goalData["icon"] as? String ?? "",
-                                name: goalData["name"] as? String ?? "",
-                                quantityComplete: 0.0,
-                                quantityGoal: goalData["quantityGoal"] as? Double ?? 0.0,
-                                unit: goalData["unit"] as? String ?? ""
-                            )
-                            
-                            goalsCollection.addDocument(data: [
-                                "date": newGoal.date,
-                                "deleted": newGoal.deleted,
-                                "detail": newGoal.detail!,
-                                "icon": newGoal.icon,
-                                "name": newGoal.name,
-                                "quantityComplete": 0.0,
-                                "quantityGoal": newGoal.quantityGoal,
-                                "unit": newGoal.unit
-                            ]) { error in
+                        // Then get all goals from that most recent date
+                        let startOfMostRecentDay = calendar.startOfDay(for: mostRecentDate)
+                        let endOfMostRecentDay = calendar.date(byAdding: .day, value: 1, to: startOfMostRecentDay)!
+                        
+                        goalsCollection
+                            .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfMostRecentDay))
+                            .whereField("date", isLessThan: Timestamp(date: endOfMostRecentDay))
+                            .whereField("deleted", isEqualTo: false)
+                            .getDocuments { snapshot, error in
                                 if let error = error {
-                                    print("Error adding new goal: \(error)")
-                                } else {
-                                    print("Successfully added goal: \(newGoal.name)")
+                                    print("Error fetching most recent day's goals: \(error)")
+                                    completion(false)
+                                    return
+                                }
+                                
+                                guard let documents = snapshot?.documents else {
+                                    completion(false)
+                                    return
+                                }
+                                
+                                // Keep track of how many goals we've processed
+                                var goalsProcessed = 0
+                                let totalGoals = documents.count
+                                
+                                for document in documents {
+                                    let goalData = document.data()
+                                    let newGoal = Goal(
+                                        id: nil,
+                                        date: Timestamp(date: Date()),
+                                        deleted: false,
+                                        detail: goalData["detail"] as? String ?? "",
+                                        icon: goalData["icon"] as? String ?? "",
+                                        name: goalData["name"] as? String ?? "",
+                                        quantityComplete: 0.0,
+                                        quantityGoal: goalData["quantityGoal"] as? Double ?? 0.0,
+                                        unit: goalData["unit"] as? String ?? ""
+                                    )
+                                    
+                                    goalsCollection.addDocument(data: [
+                                        "date": newGoal.date,
+                                        "deleted": newGoal.deleted,
+                                        "detail": newGoal.detail!,
+                                        "icon": newGoal.icon,
+                                        "name": newGoal.name,
+                                        "quantityComplete": 0.0,
+                                        "quantityGoal": newGoal.quantityGoal,
+                                        "unit": newGoal.unit
+                                    ]) { error in
+                                        goalsProcessed += 1
+                                        
+                                        if let error = error {
+                                            print("Error adding new goal: \(error)")
+                                        } else {
+                                            print("Successfully added goal: \(newGoal.name)")
+                                        }
+                                        
+                                        // Only call completion when all goals have been processed
+                                        if goalsProcessed == totalGoals {
+                                            completion(true)
+                                        }
+                                    }
+                                }
+                                
+                                // If there were no goals to process, complete immediately
+                                if totalGoals == 0 {
+                                    completion(true)
                                 }
                             }
-                        }
-                        completion()
                     }
             }
     }

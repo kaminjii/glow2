@@ -56,7 +56,7 @@ struct EditProfileView: View {
                 .frame(width: 120)
                 .shadow(color: .blackShadow, radius: 10)
             
-            Text(viewModel.userName)
+            Text(viewModel.fullName)
                 .font(.title2).bold()
         }
     }
@@ -65,7 +65,7 @@ struct EditProfileView: View {
         VStack(spacing: 20) {
             InputField(
                 title: "Name",
-                text: $viewModel.userName,
+                text: $viewModel.fullName,
                 icon: "person.fill"
             )
             

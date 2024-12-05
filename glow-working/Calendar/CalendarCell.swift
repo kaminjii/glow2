@@ -18,7 +18,7 @@ struct CalendarCell: View {
                 if let dailyLog = dailyLog {
                     let progress = dailyLog.totalProgress
                     
-                    if progress == 0 {
+                    if progress < 0 {
                         Circle()
                             .stroke(Color.grayCalendar)
                             .frame(width: 45, height: 45)
