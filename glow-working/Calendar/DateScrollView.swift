@@ -1,5 +1,6 @@
 import SwiftUI
 
+// A view that displays a month/year selector with previous/next navigation buttons
 struct DateScrollView: View {
     @EnvironmentObject var dateHolder: DateHolder
     

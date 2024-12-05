@@ -35,6 +35,7 @@ struct DailyListView: View {
                         
                         Spacer()
                     } else {
+                        // List of daily log entries
                         List {
                             ForEach(filteredLogs) { log in
                                 Section {
@@ -60,19 +61,24 @@ struct DailyListView: View {
                 }
                 .listStyle(PlainListStyle())
             }
+            // Show edit screen when a log is selected
             .fullScreenCover(item: $logToEdit) { log in
                 EditExistingDayView(date: log.date.dateValue(), onSave: { _ in })
             }
         }
+        // Load logs when view appears
         .onAppear {
             fetchDailyLogs()
         }
+        // Reload logs when selected date changes
         .onChange(of: dateHolder.date) { oldDate, newDate in
             fetchDailyLogs()
         }
     }
     
+    // Fetches daily logs from Firebase for the selected month
     private func fetchDailyLogs() {
+        // Check for authenticated user
         guard let userId = Auth.auth().currentUser?.uid else {
             print("No authenticated user")
             return
@@ -89,6 +95,7 @@ struct DailyListView: View {
         
         print("Fetching logs between \(startOfMonth) and \(endOfLastDay)")
         
+        // Query Firebase for logs within date range
         db.collection("users").document(userId).collection("dailyLogs")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfMonth))
             .whereField("date", isLessThanOrEqualTo: Timestamp(date: endOfLastDay))
@@ -100,6 +107,7 @@ struct DailyListView: View {
                 
                 print("Found \(snapshot?.documents.count ?? 0) documents")
                 
+                // Parse Firebase documents into DailyLog objects
                 self.dailyLogs = snapshot?.documents.compactMap { document in
                     if let log = try? document.data(as: DailyLog.self) {
                         print("Successfully parsed log for date: \(log.date.dateValue()), progress: \(log.totalProgress)")

@@ -27,6 +27,7 @@ struct EditExistingDayView: View {
             ZStack {
                 Color.whitePrimary.ignoresSafeArea()
                 
+                // Main content view when data is loaded
                 if dailyLog != nil {
                     ScrollView {
                         VStack(spacing: 24) {
@@ -37,6 +38,7 @@ struct EditExistingDayView: View {
                         }
                     }
                 } else {
+                    // Loading state while fetching data
                     ProgressView("Loading...")
                         .onAppear {
                             fetchDailyLog(for: date)
@@ -56,6 +58,7 @@ struct EditExistingDayView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Navigation bar items
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         presentationMode.wrappedValue.dismiss()
@@ -75,6 +78,7 @@ struct EditExistingDayView: View {
                 }
             }
         }
+        // Modal sheets for goal editing and photo selection
         .sheet(item: $selectedGoal) { goal in
             EditGoalProgressView(goal: .constant(goal)) {
                 fetchDailyLog(for: date)
@@ -82,14 +86,13 @@ struct EditExistingDayView: View {
             }
             .presentationDetents([.fraction(0.5), .large])
         }
-        .sheet(isPresented: $isPickerPresented) {
-            PhotoPicker(selectedImage: $selectedImage)
-        }
+        // Update goals when repository data changes
         .onReceive(goalRepository.$goals) { fetchedGoals in
             self.goals = fetchedGoals
         }
     }
     
+    // View component for displaying overall progress
     private var progressCard: some View {
         VStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
@@ -123,6 +126,7 @@ struct EditExistingDayView: View {
         .padding()
     }
     
+    // View component for displaying the list of goals
     private var goalsList: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Goals")
@@ -136,6 +140,7 @@ struct EditExistingDayView: View {
         }
     }
     
+    // View component for the notes input section
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Notes")
@@ -155,6 +160,7 @@ struct EditExistingDayView: View {
     
     // MARK: - Helper Functions
         
+    // Initiates the save process with loading state
     private func saveChanges() {
         guard let dailyLog = dailyLog else { return }
         
@@ -162,6 +168,7 @@ struct EditExistingDayView: View {
         saveDailyLogChanges(dailyLog)
     }
 
+    // Updates the daily log in Firebase
     private func saveDailyLogChanges(_ dailyLog: DailyLog) {
         var updatedLog = dailyLog
         
@@ -186,22 +193,24 @@ struct EditExistingDayView: View {
                     presentationMode.wrappedValue.dismiss()
                 } else {
                     print("Failed to update daily log")
-                    // You might want to show an error alert here
                 }
             }
         }
     }
     
+    // Formats the date for display in the navigation bar
     private func formattedDate(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         return formatter.string(from: date)
     }
 
+    // Updates a single goal in the repository
     private func updateGoal(_ updatedGoal: Goal) {
         goalRepository.updateGoal(updatedGoal)
     }
 
+    // Fetches the daily log for the specified date
     private func fetchDailyLog(for date: Date) {
         dailyLogRepository.fetchDailyLogs(for: date) { logs in
             if let log = logs.first {

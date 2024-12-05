@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+// A calendar view that displays daily logs for the selected month with interactive cells
 struct MonthlyCalendarView: View {
     @EnvironmentObject var dateHolder: DateHolder
     @State private var selectedDate: DailyLog?
@@ -15,7 +16,7 @@ struct MonthlyCalendarView: View {
             Color.whitePrimary.edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
-                // Calendar Header
+                // Month/year selector with navigation buttons
                 DateScrollView()
                     .environmentObject(dateHolder)
                     .padding(.horizontal)
@@ -54,6 +55,7 @@ struct MonthlyCalendarView: View {
             }
             .background(Color.whitePrimary.opacity(0.97))
             .onTapGesture {
+                // Dismiss selected date when tapping outside
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     selectedDate = nil
                 }
@@ -67,6 +69,7 @@ struct MonthlyCalendarView: View {
         }
     }
     
+    // Header showing days of the week
     var dayOfWeekStack: some View {
         HStack(spacing: 1) {
             ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
@@ -80,7 +83,9 @@ struct MonthlyCalendarView: View {
         .padding(.horizontal, 8)
     }
     
+    // Creates the month grid with appropriate date calculations
     var calendarGrid: some View {
+        // Calculate calendar layout parameters
         let daysInMonth = CalendarHelper().daysInMonth(dateHolder.date)
         let firstDayofMonth = CalendarHelper().firstDayOfMonth(dateHolder.date)
         let startingSpaces = CalendarHelper().weekDay(firstDayofMonth)
@@ -96,6 +101,7 @@ struct MonthlyCalendarView: View {
                         
                         Group {
                             if position <= 0 {
+                                // Previous month's days
                                 createCalendarCell(
                                     count: count,
                                     day: daysInPrevMonth + position,
@@ -103,6 +109,7 @@ struct MonthlyCalendarView: View {
                                     monthType: .Previous
                                 )
                             } else if position > daysInMonth {
+                                // Next month's days
                                 createCalendarCell(
                                     count: count,
                                     day: position - daysInMonth,
@@ -110,6 +117,7 @@ struct MonthlyCalendarView: View {
                                     monthType: .Next
                                 )
                             } else {
+                                // Current month's days
                                 createCalendarCell(
                                     count: count,
                                     day: position,
@@ -124,7 +132,7 @@ struct MonthlyCalendarView: View {
         }
     }
     
-    // Keep existing helper functions unchanged
+    // Creates an individual calendar cell with associated daily log data
     private func createCalendarCell(count: Int, day: Int, inMonth: Date, monthType: MonthType) -> some View {
         let calendar = Calendar.current
         var dateComponents = calendar.dateComponents([.year, .month], from: inMonth)
@@ -133,6 +141,7 @@ struct MonthlyCalendarView: View {
         let date = calendar.date(from: dateComponents)!
         let startOfDay = calendar.startOfDay(for: date)
         
+        // Find matching log for this date
         let logForDay = dailyLogs.first { log in
             let logDate = log.date.dateValue()
             let logStartOfDay = calendar.startOfDay(for: logDate)
@@ -152,6 +161,7 @@ struct MonthlyCalendarView: View {
         }
     }
     
+    // Fetches daily logs for the current month from Firebase
     private func fetchDailyLogs() {
         guard let userId = Auth.auth().currentUser?.uid else {
             print("No authenticated user")
@@ -198,7 +208,7 @@ struct MonthlyCalendarView: View {
             }
     }
 
-
+    // Helper to create a Date from day number and base date
     private func dateForDay(_ day: Int, in date: Date) -> Date {
         var components = Calendar.current.dateComponents([.year, .month], from: date)
         components.day = day

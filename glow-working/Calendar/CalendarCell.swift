@@ -1,17 +1,18 @@
 import SwiftUI
 import FirebaseFirestore
 
+
 struct CalendarCell: View {
     @EnvironmentObject var dateHolder: DateHolder
-    let count: Int
-    let startingSpaces: Int
+    let count: Int              // Position in the calendar grid (1-42)
+    let startingSpaces: Int     // Days from previous month in first week
     let daysInMonth: Int
     let daysInPrevMonth: Int
     var dailyLog: DailyLog? // Passed from parent, specific to this cell
     var onTap: (DailyLog?) -> Void
 
     var body: some View {
-        let (month, _) = monthStruct()
+        let (month, _) = monthStruct() // Calculate which month this cell belongs to and its date
 
         VStack {
             if month.monthType == .Current {
@@ -19,6 +20,7 @@ struct CalendarCell: View {
                     let progress = dailyLog.totalProgress
                     
                     if progress < 0 {
+                        // Display empty circle for negative progress (shouldn't normally occur)
                         Circle()
                             .stroke(Color.grayCalendar)
                             .frame(width: 45, height: 45)
@@ -33,11 +35,13 @@ struct CalendarCell: View {
                             }
                     }
                 } else {
+                    // Display empty circle for days without logs
                     Circle()
                         .stroke(Color.grayCalendar)
                         .frame(width: 45, height: 45)
                 }
             } else {
+                // Display for previous/next month cells
                 Circle()
                     .stroke(Color.grayCalendar)
                     .fill(Color.grayCalendarFill)
@@ -52,10 +56,13 @@ struct CalendarCell: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// Determines the text color based on whether the day is in the current month or not
     func textColor(_ type: MonthType) -> Color {
         return type == .Current ? Color.black1 : Color.gray
     }
 
+    /// Calculates the month type and day number for this cell
+    /// Returns a tuple containing the Month struct and the actual Date
     func monthStruct() -> (Month, Date) {
         let dayInt: Int
         let monthType: MonthType

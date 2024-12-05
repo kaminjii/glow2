@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseCore
 
+// A card view that displays a daily progress entry with a star rating, date, and notes
 struct DayCard: View {
     var date: Date
     var progress: Double
@@ -31,7 +32,7 @@ struct DayCard: View {
                     .frame(maxHeight: .infinity)
                     .padding(.vertical, 12)
                 
-                // Content section
+                // Right section: Progress percentage, edit button, and notes
                 VStack(alignment: .leading) {
                     HStack {
                         Text("\(Int(progress * 100))% Complete")
@@ -51,6 +52,7 @@ struct DayCard: View {
                         }
                     }
                     
+                    // Only show notes if they exist
                     if !note.isEmpty {
                         Text(note)
                             .font(.subheadline)
@@ -72,6 +74,7 @@ struct DayCard: View {
         )
     }
     
+    // Formats the date to show month and day (e.g., "Dec 5")
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d"
