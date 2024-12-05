@@ -1,9 +1,10 @@
 import SwiftUI
 import FirebaseCore
 
+// View representing a single goal item in a list
 struct GoalItem: View {
     @Binding var goal: Goal
-    var onGoalSelected: (Goal) -> Void
+    var onGoalSelected: (Goal) -> Void // Callback when the goal is selected
     var showValue: Bool
 
     init(goal: Binding<Goal>, onGoalSelected: @escaping (Goal) -> Void, showValue: Bool = true) {
@@ -16,6 +17,7 @@ struct GoalItem: View {
         HStack {
             GradientIcon(iconName: goal.icon)
             
+            // Goal name and optional detail displayed in a vertical stack
             VStack(alignment: .leading, spacing: 0) {
                 Text(goal.name)
                     .font(.headline)
@@ -28,12 +30,14 @@ struct GoalItem: View {
             
             Spacer()
             
+            // Show the progress percentage if `showValue` is true
             if showValue {
                 Text("\(Int((Double(goal.quantityComplete) / Double(goal.quantityGoal)) * 100))%")
                     .font(.subheadline)
                     .foregroundStyle(.gray1)
             }
             
+            // Button with ellipsis to trigger the `onGoalSelected` callback
             Button(action: {
                 onGoalSelected(goal)
             }) {

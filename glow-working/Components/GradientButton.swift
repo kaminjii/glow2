@@ -1,5 +1,6 @@
 import SwiftUI
 
+// A custom button view with gradient background and state-dependent styling
 struct GradientButton: View {
     var title: String
     var action: () -> Void
@@ -7,12 +8,14 @@ struct GradientButton: View {
     
     var body: some View {
         Button(action: {
+            // Execute the action only if the button is enabled
             if isEnabled {
                 action()
             }
         }) {
             ZStack {
                 if isEnabled {
+                    // Gradient background when the button is enabled
                     LinearGradient(
                         gradient: Gradient(colors: [Color.blueGradientStart, Color.blueGradientEnd]),
                         startPoint: .topLeading,
@@ -20,10 +23,12 @@ struct GradientButton: View {
                     )
                     .cornerRadius(50)
                 } else {
+                    // Solid gray background when the button is disabled
                     Color.gray3
                     .cornerRadius(50)
                 }
                 
+                // Text overlay for the button
                 Text(title)
                     .foregroundColor(isEnabled ? .white : .gray4)
                     .font(.body)

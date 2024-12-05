@@ -1,13 +1,16 @@
 import SwiftUI
 import FirebaseCore
 
+// View that displays a list of goals
 struct GoalsList: View {
     @Binding var goals: [Goal]
-    var onGoalSelected: (Goal) -> Void
+    var onGoalSelected: (Goal) -> Void // Callback when a goal is selected
     var showValue: Bool
     
     var body: some View {
+        // Iterate through the goals array using `ForEach`
         ForEach($goals) { goal in
+            // Render each goal as a `GoalItem` view
             GoalItem(goal: goal, onGoalSelected: onGoalSelected, showValue: showValue)
                 .padding()
                 .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
