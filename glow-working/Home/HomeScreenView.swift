@@ -2,29 +2,30 @@ import SwiftUI
 import FirebaseFirestore
 import FirebaseAuth
 
+// Home view serves as the main screen for the app's home interface
 struct HomeScreenView: View {
-    @Binding var selectedTab: Int
-    @State private var lastLogDate: Date? = UserDefaults.standard.object(forKey: "lastLogDate") as? Date
-    @State private var editableGoals: [Goal] = []
-    @State var note: String = ""
-    @State private var selectedGoal: Goal? = nil
-    @State private var showTodaysProgress = false
-    @State private var totalProgress: CGFloat = 0.0
-    @State private var goals: [Goal] = []
-    @State private var userName: String = ""
-    @StateObject private var viewModel = ViewModel()
-    @State private var starOffset: CGFloat = 0
-    @StateObject private var goalRepository = GoalRepository()
+    @Binding var selectedTab: Int // Binding to track the selected tab in the tab bar
+    @State private var lastLogDate: Date? = UserDefaults.standard.object(forKey: "lastLogDate") as? Date // Stores the last logged date
+    @State private var editableGoals: [Goal] = [] // Goals that can be edited by the user
+    @State var note: String = "" // Note for today's progress, editable by the user
+    @State private var selectedGoal: Goal? = nil // Tracks the goal currently selected for editing
+    @State private var showTodaysProgress = false // Boolean to toggle the display of today's progress sheet
+    @State private var totalProgress: CGFloat = 0.0 // The user's total progress for the day, as a percentage
+    @State private var goals: [Goal] = [] // Goals for the current day
+    @State private var userName: String = "" // User's name, fetched from Firestore
+    @StateObject private var viewModel = ViewModel() // ViewModel for additional logic or state management
+    @State private var starOffset: CGFloat = 0 // Offset for the animated star section
+    @StateObject private var goalRepository = GoalRepository() // Manages goal-related data operations
     
-    private let db = Firestore.firestore()
+    private let db = Firestore.firestore()  // Firestore instance for database operations
     
     var body: some View {
         NavigationView {
             ZStack {
-                Color.whitePrimary.edgesIgnoringSafeArea(.all)
+                Color.whitePrimary.edgesIgnoringSafeArea(.all) // Sets the background color
                 
                 VStack(spacing: 0) {
-                    headerGradient
+                    headerGradient // Gradient section at the top
                     Spacer()
                 }
                 .ignoresSafeArea()
@@ -32,32 +33,32 @@ struct HomeScreenView: View {
                 VStack(spacing: 0) {
                     ScrollView {
                         VStack(spacing: 10) {
-                            welcomeSection
-                            starSection
+                            welcomeSection // Displays a greeting with the user's name
+                            starSection  // Animated star section for visual appeal
                                 .padding(.vertical)
-                            progressSection
-                            goalsList
+                            progressSection // Displays today's progress with a button to show details
+                            goalsList // Lists the goals for the day
                             Spacer(minLength: 40)
                         }
                     }
                     .padding(.top, 1)
                 }
                 .tabItem {
-                    Image(systemName: "house.fill")
+                    Image(systemName: "house.fill") // Tab bar item icon for the home screen
                 }
             }
             .sheet(isPresented: $showTodaysProgress) {
-                TodaysProgressView(note: $note)
-                    .presentationDetents([.fraction(0.6), .large])
+                TodaysProgressView(note: $note) // Shows today's progress in a sheet
+                    .presentationDetents([.fraction(0.6), .large]) // Configures the sheet size
             }
             .sheet(item: $selectedGoal) { goal in
                 EditGoalProgressView(goal: .constant(goal)) {
-                    fetchGoalsForToday()
+                    fetchGoalsForToday() // Fetch updated goals after editing
                 }
                 .presentationDetents([.fraction(0.5), .large])
             }
             .onAppear {
-                fetchUserName()
+                fetchUserName() // Fetch the user's name from Firestore
                 // First create daily goals if needed, then fetch them
                 goalRepository.createDailyGoals { success in
                     if success {
@@ -71,8 +72,9 @@ struct HomeScreenView: View {
         }
     }
     
-// MARK: components
+    // MARK: components
     
+    // Header section with a gradient background
     private var headerGradient: some View {
         LinearGradient(
             gradient: Gradient(colors: [backgroundColor, .whitePrimary]),
@@ -82,6 +84,7 @@ struct HomeScreenView: View {
         .frame(height: 500)
     }
     
+    // Welcome section displaying a greeting with the user's name
     private var welcomeSection: some View {
         Text("Hello \(userName)!")
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -90,6 +93,7 @@ struct HomeScreenView: View {
             .foregroundStyle(.white)
     }
     
+    // Animated star section
     private var starSection: some View {
         Image(starImage)
             .resizable()
@@ -99,6 +103,7 @@ struct HomeScreenView: View {
             .offset(y: starOffset)
     }
     
+    // Progress section with a button to view today's progress details
     private var progressSection: some View {
         Button(action: {
             showTodaysProgress = true
@@ -111,13 +116,13 @@ struct HomeScreenView: View {
                     
                     Spacer()
                     
-                    Text("\(Int(totalProgress * 100))%")
+                    Text("\(Int(totalProgress * 100))%") // Display progress as a percentage
                         .font(.subheadline)
                         .foregroundStyle(.black1)
                 }
                 .padding(.bottom, 12)
                 
-                ProgressBar(progress: totalProgress)
+                ProgressBar(progress: totalProgress) // Circular progress bar
             }
             .padding(20)
             .background(
@@ -130,13 +135,14 @@ struct HomeScreenView: View {
         }
     }
     
+    // List of daily goals, with the ability to select a goal for editing
     private var goalsList: some View {
         GoalsList(goals: $goals, onGoalSelected: { selectedGoal in
             self.selectedGoal = selectedGoal
         }, showValue: true)
     }
     
-// MARK: helper functions
+    // MARK: helper functions
     
     // Fetch user name from Firestore
     private func fetchUserName() {
@@ -164,7 +170,7 @@ struct HomeScreenView: View {
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-
+        
         // Fetch goals for today from user's subcollection
         db.collection("users").document(userId).collection("goals")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
@@ -182,7 +188,7 @@ struct HomeScreenView: View {
                 }
             }
     }
-
+    
     // Fetch progress for the current day
     private func fetchDailyLogForToday() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
@@ -191,7 +197,7 @@ struct HomeScreenView: View {
         let today = Date()
         let startOfDay = calendar.startOfDay(for: today)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-
+        
         // Fetch daily log from user's subcollection
         db.collection("users").document(userId).collection("dailyLogs")
             .whereField("date", isGreaterThanOrEqualTo: Timestamp(date: startOfDay))
@@ -218,7 +224,7 @@ struct HomeScreenView: View {
                 }
             }
     }
-
+    
     // Star image based on progress
     private var starImage: String {
         switch totalProgress {
