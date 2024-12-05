@@ -10,6 +10,7 @@ struct SelectTemplateGoalsView: View {
     @State private var animate = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var customGoals: [TemplateGoal] = []
     
     @EnvironmentObject var viewModel: AuthenticationViewModel
     
@@ -49,6 +50,32 @@ struct SelectTemplateGoalsView: View {
                     VStack(spacing: 24) {
                         welcomeSection
                         goalGrid
+                        
+                        // Custom goals grid
+                        if !customGoals.isEmpty {
+                            LazyVGrid(columns: [
+                                GridItem(.flexible(), spacing: 16),
+                                GridItem(.flexible(), spacing: 16)
+                            ], spacing: 16) {
+                                ForEach(customGoals.indices, id: \.self) { index in
+                                    let adjustedIndex = templateGoals.count + index
+                                    TemplateGoalCard(
+                                        goal: customGoals[index],
+                                        isSelected: selectedGoals.contains(adjustedIndex)
+                                    ) {
+                                        if selectedGoals.contains(adjustedIndex) {
+                                            selectedGoals.remove(adjustedIndex)
+                                        } else {
+                                            selectedGoals.insert(adjustedIndex)
+                                        }
+                                    }
+                                    .opacity(animate ? 1 : 0)
+                                    .offset(y: animate ? 0 : 20)
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        
                         customGoalButton
                         Spacer(minLength: 60)
                     }
@@ -58,15 +85,17 @@ struct SelectTemplateGoalsView: View {
                     Spacer()
                     continueButton
                 }
-                .padding()
             }
             .navigationDestination(isPresented: $done) {
                 ContentView()
             }
         }
         .sheet(isPresented: $showAddGoal) {
-            AddGoalModal { _ in
-                // Handle custom goal
+            AddGoalModal { newGoal in
+                // Add the new goal to customGoals array
+                customGoals.append(newGoal)
+                // Automatically select the new goal
+                selectedGoals.insert(templateGoals.count + customGoals.count - 1)
             }
         }
         .alert("Error", isPresented: $showError) {
@@ -161,6 +190,8 @@ struct SelectTemplateGoalsView: View {
                 )
             }
         }
+        .padding()
+        .background(.whitePrimary)
     }
     
     private func handleContinue() {
@@ -212,7 +243,14 @@ struct SelectTemplateGoalsView: View {
         let goalsCollection = db.collection("users").document(userId).collection("goals")
         
         for index in selectedGoals {
-            let goal = templateGoals[index]
+            let goal: TemplateGoal
+            if index < templateGoals.count {
+                goal = templateGoals[index]
+            } else {
+                let customIndex = index - templateGoals.count
+                goal = customGoals[customIndex]
+            }
+            
             let (unit, quantityGoal) = getGoalDetails(for: goal.title)
             
             let goalData: [String: Any] = [
